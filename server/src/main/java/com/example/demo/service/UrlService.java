@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.ClickDetailDTO;
 import com.example.demo.dto.UrlAnalyticsResponse;
+import com.example.demo.dto.UrlCacheEntry;
 import com.example.demo.dto.UrlRequest;
 import com.example.demo.dto.UrlResponse;
 import com.example.demo.model.Click;
@@ -49,6 +50,7 @@ public class UrlService {
         this.objectMapper = objectMapper;
     }
 
+    // Creates a short URL for the authenticated user and stores the mapping in Postgres.
     @Transactional
     public UrlResponse shortenUrl(UrlRequest request) {
         User user = authUtils.getCurrentUser();
@@ -76,22 +78,36 @@ public class UrlService {
         saved.setShortCode(shortCode);
 
         urlRepository.save(saved);
+        redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
         return new UrlResponse(shortCode, originalUrl, 0, saved.isActive(), saved.getExpiresAt());
     }
 
+    // Resolves a short code to its destination URL, preferring Redis before falling back to DB.
     public String redirectUrl(String shortCode, String ipAddress, String userAgent) {
         String cacheKey = "url:" + shortCode;
-        String cachedUrl = redisTemplate.opsForValue().get(cacheKey);
+        String cachedJson = redisTemplate.opsForValue().get(cacheKey);
+
+        UrlCacheEntry cachedEntry = null;
+        if (cachedJson != null) {
+            cachedEntry = readCacheEntry(cachedJson);
+        }
 
         String originalUrl;
         Long urlId;
+        Long ownerUserId;
 
-        if (cachedUrl != null) {
-            originalUrl = cachedUrl;
-            urlId = urlRepository
-                .findIdByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("Short code not found"));
+        if (cachedEntry != null) {
+            if (!cachedEntry.isActive()) {
+                throw new RuntimeException("This link is disabled");
+            }
+            if (cachedEntry.expiresAt().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("This link has expired");
+            }
+
+            originalUrl = cachedEntry.originalUrl();
+            urlId = cachedEntry.id();
+            ownerUserId = cachedEntry.userId();
         } else {
             Url url = urlRepository
                 .findByShortCode(shortCode)
@@ -106,8 +122,9 @@ public class UrlService {
 
             originalUrl = url.getOriginalUrl();
             urlId = url.getId();
+            ownerUserId = url.getUser().getId();
 
-            redisTemplate.opsForValue().set(cacheKey, originalUrl, Duration.ofHours(24));
+            cacheUrl(cacheKey, url);
         }
 
         Click click = Click.builder()
@@ -119,23 +136,63 @@ public class UrlService {
 
         clickRepository.save(click);
         redisTemplate.delete("analytics:" + shortCode);
+        if (ownerUserId != null) {
+            redisTemplate.delete(userUrlsCacheKey(ownerUserId));
+        }
 
         return originalUrl;
     }
 
+    // Stores a lightweight URL snapshot in Redis so redirects can avoid a DB lookup on cache hits.
+    private void cacheUrl(String cacheKey, Url url) {
+        try {
+            UrlCacheEntry entry = new UrlCacheEntry(
+                url.getId(),
+                url.getUser().getId(),
+                url.getOriginalUrl(),
+                url.isActive(),
+                url.getExpiresAt()
+            );
+            redisTemplate
+                .opsForValue()
+                .set(cacheKey, objectMapper.writeValueAsString(entry), Duration.ofHours(24));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to cache URL", e);
+        }
+    }
+
+    // Reads the cached JSON snapshot back into a typed object.
+    private UrlCacheEntry readCacheEntry(String cachedJson) {
+        try {
+            return objectMapper.readValue(cachedJson, UrlCacheEntry.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read cached URL", e);
+        }
+    }
+
+    // Returns the authenticated user's URLs along with click counts.
     public List<UrlResponse> getUserUrls() {
         User user = authUtils.getCurrentUser();
+        String cacheKey = userUrlsCacheKey(user.getId());
+
+        String cachedJson = redisTemplate.opsForValue().get(cacheKey);
+        if (cachedJson != null) {
+            return readUserUrlsCache(cachedJson);
+        }
 
         List<Url> urls = urlRepository.findByUser(user);
 
-        if (urls.isEmpty()) return List.of();
+        if (urls.isEmpty()) {
+            redisTemplate.opsForValue().set(cacheKey, "[]", Duration.ofSeconds(30));
+            return List.of();
+        }
 
         Map<Long, Long> clickCounts = clickRepository
             .countClicksGroupedByUrl(urls)
             .stream()
             .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
 
-        return urls
+        List<UrlResponse> response = urls
             .stream()
             .map(url ->
                 new UrlResponse(
@@ -147,8 +204,39 @@ public class UrlService {
                 )
             )
             .toList();
+
+        cacheUserUrls(cacheKey, response);
+        return response;
     }
 
+    private String userUrlsCacheKey(Long userId) {
+        return "urls:" + userId;
+    }
+
+    private void cacheUserUrls(String cacheKey, List<UrlResponse> urls) {
+        try {
+            redisTemplate
+                .opsForValue()
+                .set(cacheKey, objectMapper.writeValueAsString(urls), Duration.ofSeconds(30));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to cache URL list", e);
+        }
+    }
+
+    private List<UrlResponse> readUserUrlsCache(String cachedJson) {
+        try {
+            return objectMapper.readValue(
+                cachedJson,
+                objectMapper
+                    .getTypeFactory()
+                    .constructCollectionType(List.class, UrlResponse.class)
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read cached URL list", e);
+        }
+    }
+
+    // Enables or disables one of the current user's links and invalidates its redirect cache.
     public boolean toggleUrlStatus(String shortCode) {
         User user = authUtils.getCurrentUser();
 
@@ -163,10 +251,12 @@ public class UrlService {
         url.setActive(!url.isActive());
         urlRepository.save(url);
         redisTemplate.delete("url:" + shortCode);
+        redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
         return url.isActive();
     }
 
+    // Deletes the URL, its click history, and any related Redis cache entries.
     @Transactional
     public void deleteUrl(String shortCode) {
         User user = authUtils.getCurrentUser();
@@ -183,8 +273,10 @@ public class UrlService {
         urlRepository.delete(url);
         redisTemplate.delete("url:" + shortCode);
         redisTemplate.delete("analytics:" + shortCode);
+        redisTemplate.delete(userUrlsCacheKey(user.getId()));
     }
 
+    // Builds analytics from cached JSON when available, otherwise computes and caches it.
     public UrlAnalyticsResponse getUrlAnalytics(String shortCode) {
         User user = authUtils.getCurrentUser();
 
@@ -196,6 +288,14 @@ public class UrlService {
                 cachedJson,
                 UrlAnalyticsResponse.class
             );
+            Url url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() -> new RuntimeException("Short code not found"));
+
+            if (!url.getUser().getId().equals(user.getId())) {
+                throw new RuntimeException("You dont own this url");
+            }
+
             return cached;
         } else {
             Url url = urlRepository
@@ -256,6 +356,7 @@ public class UrlService {
         }
     }
 
+    // Parses the browser family from the user-agent string.
     private String extractBrowser(String userAgent) {
         Client client = USER_AGENT_PARSER.parse(userAgent);
         if (client == null || client.userAgent == null || client.userAgent.family == null) {
@@ -264,6 +365,7 @@ public class UrlService {
         return client.userAgent.family != null ? client.userAgent.family : "Unknown";
     }
 
+    // Parses the operating system family from the user-agent string.
     private String extractOperatingSystem(String userAgent) {
         Client client = USER_AGENT_PARSER.parse(userAgent);
         if (client == null || client.os == null || client.os.family == null) {

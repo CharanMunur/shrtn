@@ -92,25 +92,33 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
     },
   } satisfies ChartConfig
 
-  // Single parallel fetch: load URL list and analytics together
   useEffect(() => {
     ;(async () => {
       setIsLoading(true)
       setError("")
       try {
-        const data = await getUserUrls(token!)
-        const enriched = enrichUrls(data)
-        setUrls(enriched)
-
-        const code = shortCode ?? initialShortCode ?? (enriched.length > 0 ? enriched[0].shortCode : "")
-        if (code) {
-          setSelectedCode(code)
-          if (!shortCode && enriched.length > 0) {
-            navigate(`/dashboard/analytics/${code}`, { replace: true })
-          }
-          // Fetch analytics in parallel with the URL list resolution
-          const analyticsData = await getUrlAnalytics(code, token!)
+        const initialCode = shortCode ?? initialShortCode
+        if (initialCode) {
+          const [data, analyticsData] = await Promise.all([
+            getUserUrls(token!),
+            getUrlAnalytics(initialCode, token!),
+          ])
+          const enriched = enrichUrls(data)
+          setUrls(enriched)
+          setSelectedCode(initialCode)
           setAnalytics(analyticsData)
+        } else {
+          const data = await getUserUrls(token!)
+          const enriched = enrichUrls(data)
+          setUrls(enriched)
+
+          const nextCode = enriched.length > 0 ? enriched[0].shortCode : ""
+          if (nextCode) {
+            setSelectedCode(nextCode)
+            navigate(`/dashboard/analytics/${nextCode}`, { replace: true })
+            const analyticsData = await getUrlAnalytics(nextCode, token!)
+            setAnalytics(analyticsData)
+          }
         }
       } catch (err) {
         if (err instanceof ApiError) setError(err.message)
