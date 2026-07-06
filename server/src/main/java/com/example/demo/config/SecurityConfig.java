@@ -43,6 +43,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/health").permitAll()
                 .requestMatchers("/{shortCode}").permitAll() // Allow redirect without auth
                 .anyRequest().authenticated()
             )
