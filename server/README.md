@@ -22,8 +22,9 @@ The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun
 
 ### `service/UrlService.java`
 - Generates Base62 short codes from auto-incremented PostgreSQL IDs
-- On redirect: checks Redis → falls back to DB → caches hit → logs click asynchronously
-- Evicts Redis keys on toggle / delete
+- On redirect: checks Redis → falls back to DB → caches the full URL snapshot → logs the click in Postgres
+- Caches `UrlCacheEntry` for redirect hot-path data and `UrlResponse[]` for per-user list views
+- Evicts Redis keys on click, toggle, delete, and shorten where relevant
 
 ### `service/OtpService.java`
 - Generates 6-digit OTPs linked to a user + purpose (`EMAIL_VERIFICATION` / `FORGOT_PASSWORD`)
@@ -44,7 +45,8 @@ The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun
 
 | Key | Value | TTL | Eviction trigger |
 |---|---|---|---|
-| `url:{shortCode}` | Original URL string | 24h | Toggle off / Delete |
+| `url:{shortCode}` | Serialized `UrlCacheEntry` (`id`, `userId`, `originalUrl`, `isActive`, `expiresAt`) | 24h | Toggle off / Delete |
+| `urls:{userId}` | Serialized `UrlResponse[]` for My Links / dashboard counts | Short TTL | Click / Shorten / Toggle / Delete |
 | `analytics:{shortCode}` | Serialised analytics object | Until evicted | New click / Delete |
 
 ---

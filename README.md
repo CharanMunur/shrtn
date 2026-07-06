@@ -48,10 +48,11 @@ User visits shrtn.fun/{code}
   └─────┬─────┘
         │ Yes + Active
         ▼
-  Cache in Redis (24h TTL) → Log click async → 302 → destination
+  Cache in Redis (24h TTL) → Save click → 302 → destination
 ```
 
-- **Hot-path cache:** `url:{shortCode}` → original URL, 24h TTL
+- **Hot-path cache:** `url:{shortCode}` → serialized `UrlCacheEntry` with `id`, `userId`, `originalUrl`, `isActive`, `expiresAt` (24h TTL)
+- **List cache:** `urls:{userId}` → serialized `UrlResponse[]` for My Links / dashboard counts (short TTL, evicted on click, shorten, toggle, delete)
 - **Analytics cache:** `analytics:{shortCode}` — evicted on every new click or delete
 - **Cache eviction:** toggle or delete immediately purges relevant Redis keys
 
