@@ -3,18 +3,15 @@ import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Link2,
-  Zap,
   BarChart3,
   ArrowRight,
   CheckCircle2,
-  Clock,
-  Sparkles,
   ChevronDown,
   Sliders,
-  Info
+  QrCode,
+  Download,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 
 
 const containerVariants = {
@@ -93,12 +90,14 @@ export function LandingPage() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate("/signin")}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="cursor-pointer text-xs font-semibold"
             >
               Sign in
-            </button>
+            </Button>
             <Button size="sm" onClick={() => navigate("/signup")} className="cursor-pointer text-xs">
               Sign up
             </Button>
@@ -114,156 +113,259 @@ export function LandingPage() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="relative w-full max-w-5xl px-4 sm:px-6 pt-16 pb-12 sm:pt-20 sm:pb-16 text-center flex flex-col items-center"
+          className="relative w-full min-h-[calc(100vh-3.5rem)] px-4 sm:px-6 flex flex-col items-center justify-center text-center overflow-hidden border-b border-border bg-gradient-to-b from-background via-muted/5 to-background"
         >
-          <motion.div variants={itemVariants} className="flex justify-center mb-6">
-            <Badge variant="secondary" className="gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-border bg-muted/50">
-              <Sparkles className="h-3.5 w-3.5 text-foreground" />
-              Free URL Shortening & Live Metrics
-            </Badge>
-          </motion.div>
+          {/* Subtle Ambient Gradient Light */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
 
-          <motion.h1 variants={itemVariants} className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-4 text-foreground text-center max-w-3xl">
-            Clean short links.<br />Instant visitor insights.
-          </motion.h1>
+          <div className="relative max-w-3xl flex flex-col items-center z-10 py-12">
 
-          <motion.p variants={itemVariants} className="mx-auto max-w-xl text-sm sm:text-base text-muted-foreground leading-relaxed mb-8 text-center">
-            Transform long, clunky URLs into short, shareable links. Track visitor click counts, browsers, and devices immediately from a private dashboard.
-          </motion.p>
 
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs sm:max-w-none">
-            <Button
-              size="lg"
-              onClick={() => navigate("/signup")}
-              className="gap-2 px-6 h-10 text-sm shadow-sm cursor-pointer w-full sm:w-auto font-semibold"
-            >
-              Get Started for Free
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </motion.div>
+            <motion.h1 variants={itemVariants} className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-foreground text-center">
+              Clean Short Links.<br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
+                Instant visitor insights.
+              </span>
+            </motion.h1>
+
+            <motion.p variants={itemVariants} className="mx-auto max-w-xl text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 text-center">
+              Transform long, clunky URLs into short, shareable links. Generate custom QR codes and track visitor click counts, browsers, and devices immediately from a private dashboard.
+            </motion.p>
+
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full max-w-md">
+              <Button
+                onClick={() => navigate("/signup")}
+                className="gap-2 px-5 h-10 text-xs shadow-xs cursor-pointer w-full sm:w-auto font-semibold"
+              >
+                Get Started for Free
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const element = document.getElementById("how-it-works")
+                  element?.scrollIntoView({ behavior: "smooth" })
+                }}
+                className="h-10 text-xs cursor-pointer w-full sm:w-auto font-semibold"
+              >
+                Learn More
+              </Button>
+            </motion.div>
+          </div>
         </motion.section>
 
-        {/* Bento Grid Feature Section */}
-        <section className="py-20 border-t border-border w-full flex flex-col items-center bg-muted/10">
+        {/* How It Works Section */}
+        <section id="how-it-works" className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-muted/5 relative">
           <div className="w-full max-w-5xl px-4 sm:px-6">
             <div className="text-center mb-16">
-              <Badge variant="secondary" className="mb-2">Platform Features</Badge>
+
               <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                How Shrtn Works & What It Offers
+                Three Steps to Better Links
               </h2>
               <p className="mt-2 text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
-                A simple overview of the options, bounds, and security measures designed to keep your links active and safe.
+                Shrtn streamlines the process of sharing URLs and monitoring their performance.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Card 1: URL Shortener & Quota */}
-              <div className="md:col-span-2 border border-border bg-card text-card-foreground p-6 rounded-xl shadow-xs hover:border-muted-foreground/30 transition-all flex flex-col justify-between text-left">
-                <div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground mb-4">
-                    <Zap className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">Instant Link Shortener</h3>
-                  <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                    Convert long, query-heavy links into clean, shareable short codes. The creation panel displays your usage in real-time, helping you track how many links you have generated toward your account quota.
-                  </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+              {/* Process Step 1 */}
+              <div className="flex flex-col items-start p-6 rounded-xl border border-border/60 bg-card text-left relative">
+                <span className="absolute -top-4 left-6 text-3xl font-black text-primary/10 select-none">01</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 font-bold">
+                  <Sliders className="h-5 w-5" />
                 </div>
-                <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-border/50 flex items-center justify-between text-xs font-mono">
-                  <span className="text-muted-foreground truncate">https://github.com/charanmunur/shrtn...</span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 mx-2" />
-                  <span className="text-foreground font-bold font-mono">shrtn.fun/xK9mPq</span>
-                </div>
+                <h3 className="text-base font-bold text-foreground mb-2">1. Shorten URLs</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Paste any long, query-heavy link into our shorten form. Generate a clean, 6-character Base62 short URL instantly.
+                </p>
               </div>
 
-              {/* Card 2: Unified Link Dashboard */}
-              <div className="border border-border bg-card text-card-foreground p-6 rounded-xl shadow-xs hover:border-muted-foreground/30 transition-all flex flex-col justify-between text-left">
-                <div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground mb-4">
-                    <Link2 className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">Unified Dashboard</h3>
-                  <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                    Access all your shortened URLs from a single clean dashboard. Monitor active counters, track relative expirations, and perform swift updates without navigating complicated settings.
-                  </p>
+              {/* Process Step 2 */}
+              <div className="flex flex-col items-start p-6 rounded-xl border border-border/60 bg-card text-left relative">
+                <span className="absolute -top-4 left-6 text-3xl font-black text-primary/10 select-none">02</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 font-bold">
+                  <QrCode className="h-5 w-5" />
                 </div>
-                <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  <span>Centralized link hub</span>
-                </div>
+                <h3 className="text-base font-bold text-foreground mb-2">2. Enable QR Codes</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Turn on QR codes for your short URLs. Scan them or download high-resolution PNG files directly for print or digital media.
+                </p>
               </div>
 
-              {/* Card 3: Link Expiry timers */}
-              <div className="border border-border bg-card text-card-foreground p-6 rounded-xl shadow-xs hover:border-muted-foreground/30 transition-all flex flex-col justify-between text-left">
-                <div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground mb-4">
-                    <Clock className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">30-Day Active Expiration</h3>
-                  <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                    To maintain clean routing and prevent database clutter, each shortened link stays active for exactly 30 days. Perfect for monthly updates, short-term campaigns, or finite document shares.
-                  </p>
+              {/* Process Step 3 */}
+              <div className="flex flex-col items-start p-6 rounded-xl border border-border/60 bg-card text-left relative">
+                <span className="absolute -top-4 left-6 text-3xl font-black text-primary/10 select-none">03</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 font-bold">
+                  <BarChart3 className="h-5 w-5" />
                 </div>
-                <div className="mt-6 flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-3">
-                  <span>Relative countdown</span>
-                  <span className="font-mono text-foreground font-bold">29d 23h remaining</span>
-                </div>
+                <h3 className="text-base font-bold text-foreground mb-2">3. Track Analytics</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Access click timelines, browser logs, OS splits, and real-time counters from your private analytics dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Showcase: Analytics */}
+        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-background relative">
+          <div className="w-full max-w-5xl px-4 sm:px-6">
+            <div className="flex flex-col md:flex-row items-center gap-12">
+              <div className="flex-1 text-left space-y-4">
+
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  Monitor Redirection Stats in Real Time
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Understand exactly who is visiting your short links. The analytics dashboard compiles click history and classifies client request details into readable graphs and metrics:
+                </p>
+                <ul className="space-y-2.5 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span>Real-time click counts and time series graphs (7d, 30d, all-time)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span>User-agent breakdown: Browser & OS classifications (Chrome, Safari, macOS, Linux, etc.)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span>Click log audits containing IP logs and relative timestamps</span>
+                  </li>
+                </ul>
               </div>
 
-              {/* Card 4: Switch Status & Limits */}
-              <div className="md:col-span-2 border border-border bg-card text-card-foreground p-6 rounded-xl shadow-xs hover:border-muted-foreground/30 transition-all flex flex-col justify-between text-left">
-                <div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground mb-4">
-                    <Sliders className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">Status & Quota Controls</h3>
-                  <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                    Temporarily pause redirects anytime. Toggle any short link to 'Inactive' to stop routing visitors instantly. Users can manage up to 25 links concurrently, and deleting old links immediately restores your quota.
-                  </p>
+              <div className="flex-1 w-full max-w-md border border-border bg-card p-5 rounded-2xl shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <span className="text-xs font-bold text-foreground">Visits Over Time</span>
+                  <span className="text-[10px] font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">7 Days</span>
                 </div>
-                <div className="mt-6 flex items-center justify-between gap-4">
-                  <div className="flex-1 bg-muted h-2.5 rounded-full overflow-hidden border border-border/50">
+                {/* Fake Chart Preview */}
+                <div className="h-32 flex items-end gap-2.5 px-2 bg-muted/20 rounded-lg border border-border/45 py-2">
+                  {[20, 45, 30, 80, 50, 95, 70].map((h, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                      <div
+                        className="w-full bg-primary/20 hover:bg-primary rounded-t transition-all duration-300"
+                        style={{ height: `${h}%` }}
+                      />
+                      <span className="text-[9px] text-muted-foreground font-mono">Day {i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between text-[10px] font-mono pt-1 text-muted-foreground">
+                  <span>Total Clicks: <strong className="text-foreground">245</strong></span>
+                  <span>Avg/Day: <strong className="text-foreground">35</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Showcase: QR Code Ecosystem */}
+        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-muted/5 relative">
+          <div className="w-full max-w-5xl px-4 sm:px-6">
+            <div className="flex flex-col md:flex-row-reverse items-center gap-12">
+              <div className="flex-1 text-left space-y-4">
+
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  Built-in Custom QR Code Engine
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Every shortened URL includes a direct path to its own QR code, ideal for packaging, physical signage, business cards, or offline ads.
+                </p>
+                <ul className="space-y-2.5 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span>Clean QR Codes generated on-the-fly directly from the backend API</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span>Downloadable high-resolution PNG format for easy printing</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span>Enable or disable QR codes at any time from your dashboard</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Simulated QR Code Card */}
+              <div className="flex-1 w-full max-w-xs border border-border bg-card overflow-hidden rounded-2xl shadow-xs">
+                <div className="aspect-square w-full bg-white flex items-center justify-center border-b border-border/80 p-6">
+                  {/* Fake QR Image placeholder */}
+                  <div className="relative h-44 w-44 bg-muted flex items-center justify-center rounded border border-border border-dashed">
+                    <QrCode className="h-20 w-20 text-muted-foreground/30 animate-pulse" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent pointer-events-none" />
+                  </div>
+                </div>
+                <div className="p-4 flex items-center justify-between bg-card text-left">
+                  <div>
+                    <p className="text-xs font-mono font-bold text-primary">/mK9mPq</p>
+                    <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">shrtn.fun/mK9mPq</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 px-2.5">
+                    <Download className="h-3 w-3" /> Download
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Showcase: Limits & Status Controls */}
+        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-background relative">
+          <div className="w-full max-w-5xl px-4 sm:px-6">
+            <div className="flex flex-col md:flex-row items-center gap-12">
+              <div className="flex-1 text-left space-y-4">
+
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  Keep Your Redirects Clean & Organized
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  We enforce simple, sensible limits to prevent spam, maintain maximum database performance, and ensure your redirection link flows remain secure.
+                </p>
+                <ul className="space-y-2.5 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span><strong>25 Links Quota</strong>: Manage up to 25 links. Recycle slots by deleting old links.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span><strong>30-Day Auto Expiry</strong>: Links expire 30 days after creation to prevent link rot.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span><strong>Status Switcher</strong>: Toggle links to &apos;Inactive&apos; to pause redirection instantly.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex-1 w-full max-w-md border border-border bg-card p-5 rounded-2xl shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <span className="text-xs font-bold text-foreground">Quota & Controls</span>
+                  <span className="text-[10px] font-semibold text-green-500 bg-green-950/20 px-2 py-0.5 rounded border border-green-500/20">Secure</span>
+                </div>
+                {/* Quota visual */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">URL Quota Usage</span>
+                    <span className="font-bold font-mono">12 / 25 links</span>
+                  </div>
+                  <div className="w-full bg-muted h-3 rounded-full overflow-hidden border border-border/50">
                     <div className="bg-primary h-full w-[48%]" />
                   </div>
-                  <span className="text-xs font-bold font-mono shrink-0">12 / 25 Links Used</span>
                 </div>
-              </div>
-
-              {/* Card 5: Metrics Area Chart */}
-              <div className="md:col-span-2 border border-border bg-card text-card-foreground p-6 rounded-xl shadow-xs hover:border-muted-foreground/30 transition-all flex flex-col justify-between text-left">
-                <div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground mb-4">
-                    <BarChart3 className="h-4.5 w-4.5" />
+                {/* Status Switcher visual */}
+                <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/40 pt-3">
+                  <div className="text-left">
+                    <p className="text-xs font-semibold text-foreground">Link Status</p>
+                    <p className="text-[10px] text-muted-foreground">Visitors will be redirected</p>
                   </div>
-                  <h3 className="text-base font-bold text-foreground">Interactive Click Charting</h3>
-                  <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                    Audit redirection stats across multiple periods. The analytics panel includes clean click charts showing traffic timelines over 7-day, 30-day, or all-time intervals.
-                  </p>
-                </div>
-                <div className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="px-2 py-1 rounded bg-muted text-foreground font-semibold">7 Days</span>
-                  <span className="px-2 py-1 rounded hover:bg-muted transition-colors">30 Days</span>
-                  <span className="px-2 py-1 rounded hover:bg-muted transition-colors">All Time</span>
-                </div>
-              </div>
-
-              {/* Card 6: User-Agent breakdown */}
-              <div className="border border-border bg-card text-card-foreground p-6 rounded-xl shadow-xs hover:border-muted-foreground/30 transition-all flex flex-col justify-between text-left">
-                <div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground mb-4">
-                    <Info className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">Client Breakdowns</h3>
-                  <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-                    Understand your audience. The dashboard breaks down visits by visitor browser, OS classification, and logs individual redirection requests with IP info and relative time labels.
-                  </p>
-                </div>
-                <div className="mt-6 space-y-1.5">
-                  <div className="flex justify-between text-[11px] font-mono">
-                    <span className="text-muted-foreground">Chrome</span>
-                    <span className="text-foreground font-bold">72%</span>
-                  </div>
-                  <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full w-[72%]" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-4 bg-primary rounded-full relative flex items-center px-0.5 cursor-pointer">
+                      <div className="w-3 h-3 bg-background rounded-full translate-x-4 transition-transform" />
+                    </div>
+                    <span className="text-[10px] font-bold text-green-500 uppercase">Active</span>
                   </div>
                 </div>
               </div>
@@ -272,55 +374,57 @@ export function LandingPage() {
         </section>
 
         {/* Collapsible FAQ Section */}
-        <section className="w-full max-w-3xl px-4 sm:px-6 py-20 sm:py-24">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-2">Common Inquiries</Badge>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Frequently Asked Questions
-            </h2>
-          </div>
+        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-muted/5 relative">
+          <div className="w-full max-w-3xl px-4 sm:px-6">
+            <div className="text-center mb-12">
 
-          <div className="space-y-3">
-            {FAQ_ITEMS.map((item, index) => {
-              const isOpen = openFaq === index
-              return (
-                <div
-                  key={index}
-                  className="rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-muted-foreground/30"
-                >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : index)}
-                    className="w-full py-4 px-5 text-left font-semibold text-foreground flex items-center justify-between focus:outline-none cursor-pointer border-0 bg-transparent"
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                Frequently Asked Questions
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {FAQ_ITEMS.map((item, index) => {
+                const isOpen = openFaq === index
+                return (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-muted-foreground/30"
                   >
-                    <span className="text-xs sm:text-sm pr-4">{item.question}</span>
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-foreground" : ""
-                      }`}
-                    />
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                      >
-                        <div className="px-5 pb-5 text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-3 text-left">
-                          {item.answer}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )
-            })}
+                    <button
+                      onClick={() => setOpenFaq(isOpen ? null : index)}
+                      className="w-full py-4 px-5 text-left font-semibold text-foreground flex items-center justify-between focus:outline-none cursor-pointer border-0 bg-transparent"
+                    >
+                      <span className="text-xs sm:text-sm pr-4">{item.question}</span>
+                      <ChevronDown
+                        className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                          isOpen ? "rotate-180 text-foreground" : ""
+                        }`}
+                      />
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                        >
+                          <div className="px-5 pb-5 text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-3 text-left">
+                            {item.answer}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
 
         {/* Call to Action Section */}
-        <section className="w-full py-20 sm:py-24 border-t border-border bg-muted/10 flex flex-col items-center">
+        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-t border-border bg-muted/5 relative">
           <div className="w-full max-w-3xl px-4 sm:px-6 text-center flex flex-col items-center">
             <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Link2 className="h-5.5 w-5.5" />
@@ -335,18 +439,16 @@ export function LandingPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs sm:max-w-none">
               <Button
-                size="lg"
                 onClick={() => navigate("/signup")}
-                className="gap-2 px-6 h-10 text-xs shadow-sm cursor-pointer w-full sm:w-auto font-semibold"
+                className="gap-2 px-5 h-10 text-xs shadow-xs cursor-pointer w-full sm:w-auto font-semibold"
               >
                 Create Free Account
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-3.5 w-3.5" />
               </Button>
               <Button
-                variant="ghost"
-                size="lg"
+                variant="outline"
                 onClick={() => navigate("/signin")}
-                className="text-muted-foreground hover:text-foreground h-10 text-xs cursor-pointer w-full sm:w-auto"
+                className="h-10 text-xs cursor-pointer w-full sm:w-auto font-semibold"
               >
                 Already have an account? Sign in
               </Button>
