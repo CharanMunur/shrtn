@@ -15,6 +15,7 @@ import {
   User,
   Menu,
   X,
+  QrCode,
 } from "lucide-react"
 import { useAuth } from "@/providers/auth-provider"
 import { useTheme } from "@/providers/theme-provider"
@@ -24,6 +25,7 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage"
 import { ShortenPage } from "@/pages/ShortenPage"
 import { SettingsPage } from "@/pages/SettingsPage"
 import { PersonalInfoPage } from "@/pages/PersonalInfoPage"
+import { QrCodesPage } from "@/pages/QrCodesPage"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,12 +33,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 
-type Page = "dashboard" | "shorten" | "links" | "analytics" | "settings" | "personal-info"
+type Page = "dashboard" | "shorten" | "links" | "analytics" | "settings" | "personal-info" | "qrcodes"
 
 const NAV_ITEMS: { id: Exclude<Page, "settings" | "personal-info">; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
   { id: "shorten", label: "Shorten URL", icon: <Scissors className="h-4 w-4" /> },
   { id: "links", label: "My Links", icon: <Link2 className="h-4 w-4" /> },
+  { id: "qrcodes", label: "QR Codes", icon: <QrCode className="h-4 w-4" /> },
   { id: "analytics", label: "Analytics", icon: <BarChart2 className="h-4 w-4" /> },
 ]
 
@@ -51,6 +54,7 @@ export function DashboardShell() {
   const page: Page = (() => {
     if (pathname.includes("/dashboard/shorten")) return "shorten"
     if (pathname.includes("/dashboard/links")) return "links"
+    if (pathname.includes("/dashboard/qrcodes")) return "qrcodes"
     if (pathname.includes("/dashboard/analytics")) return "analytics"
     if (pathname.includes("/dashboard/settings")) return "settings"
     if (pathname.includes("/dashboard/personal-info")) return "personal-info"
@@ -259,6 +263,7 @@ export function DashboardShell() {
             <Route path="/" element={<AnimatedPage><DashboardPage onNavigate={navigateTo} /></AnimatedPage>} />
             <Route path="/shorten" element={<AnimatedPage><ShortenPage /></AnimatedPage>} />
             <Route path="/links" element={<AnimatedPage><MyLinksPage onViewAnalytics={viewAnalytics} /></AnimatedPage>} />
+            <Route path="/qrcodes" element={<AnimatedPage><QrCodesPage /></AnimatedPage>} />
             <Route path="/analytics" element={<AnimatedPage><AnalyticsPage /></AnimatedPage>} />
             <Route path="/analytics/:shortCode" element={<AnimatedPage><AnalyticsPage /></AnimatedPage>} />
             <Route path="/settings" element={<AnimatedPage><SettingsPage /></AnimatedPage>} />

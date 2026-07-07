@@ -6,8 +6,9 @@ The React web app for [Shrtn](https://app.shrtn.fun). Deployed on **Vercel** at 
 
 - **Auth flows** — sign-up, email OTP verification, login, forgot/reset password
 - **Dashboard** — overview stats, recent links, click totals
-- **My Links** — paginated table with toggle, copy, delete, analytics per link
-- **Shorten page** — paste a URL, get a `shrtn.fun/{code}` link instantly
+- **My Links** — management table with toggle, copy, delete, analytics, and QR overlay per link
+- **QR Codes** — dedicated dashboard grid to enable/disable QR codes and download high-resolution PNGs
+- **Shorten page** — paste a URL, get a `shrtn.fun/{code}` link instantly with quick QR code view
 - **Analytics** — browser/OS breakdowns, click timelines (Recharts)
 - **Theme** — light / dark / system toggle, persisted to localStorage
 - **Responsive** — desktop sidebar + mobile slide-out drawer
@@ -46,8 +47,9 @@ src/
 ├── pages/
 │   ├── LandingPage.tsx       # Public marketing page
 │   ├── DashboardPage.tsx     # Overview stats + quick actions
-│   ├── ShortenPage.tsx       # URL shortening form with usage limit indicator
-│   ├── MyLinksPage.tsx       # Full link management table (desktop + mobile card)
+│   ├── ShortenPage.tsx       # URL shortening form with usage limit indicator and QR dialog
+│   ├── MyLinksPage.tsx       # Full link management table with copy, edit, delete, and QR modal
+│   ├── QrCodesPage.tsx       # QR code management dashboard (generate, revoke, download)
 │   ├── AnalyticsPage.tsx     # Per-link click analytics with charts
 │   ├── SettingsPage.tsx      # Change password
 │   └── PersonalInfoPage.tsx  # Profile info

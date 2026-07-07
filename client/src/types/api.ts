@@ -45,6 +45,7 @@ export type UrlResponse = {
   totalClicks: number
   isActive: boolean
   active?: boolean
+  hasQrCode?: boolean
   expiresAt: string
 }
 

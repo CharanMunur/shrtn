@@ -80,7 +80,7 @@ public class UrlService {
         urlRepository.save(saved);
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
-        return new UrlResponse(shortCode, originalUrl, 0, saved.isActive(), saved.getExpiresAt());
+        return new UrlResponse(shortCode, originalUrl, 0, saved.isActive(), saved.isHasQrCode(), saved.getExpiresAt());
     }
 
     // Resolves a short code to its destination URL, preferring Redis before falling back to DB.
@@ -200,6 +200,7 @@ public class UrlService {
                     url.getOriginalUrl(),
                     clickCounts.getOrDefault(url.getId(), 0L),
                     url.isActive(),
+                    url.isHasQrCode(),
                     url.getExpiresAt()
                 )
             )
@@ -372,5 +373,63 @@ public class UrlService {
             return "Unknown";
         }
         return client.os.family != null ? client.os.family : "Unknown";
+    }
+
+    // Checks if a shortcode exists, is active, and is not expired (does not register a click).
+    public boolean existsAndActive(String shortCode) {
+        String cacheKey = "url:" + shortCode;
+        String cachedJson = redisTemplate.opsForValue().get(cacheKey);
+        if (cachedJson != null) {
+            UrlCacheEntry cachedEntry = readCacheEntry(cachedJson);
+            return cachedEntry != null && cachedEntry.isActive() && cachedEntry.expiresAt().isAfter(LocalDateTime.now());
+        }
+        return urlRepository.findByShortCode(shortCode)
+            .map(url -> {
+                cacheUrl(cacheKey, url);
+                return url.isActive() && url.getExpiresAt().isAfter(LocalDateTime.now());
+            })
+            .orElse(false);
+    }
+
+    // Generates a QR Code for a link.
+    @Transactional
+    public boolean generateQrCode(String shortCode) {
+        User user = authUtils.getCurrentUser();
+        Url url = urlRepository.findByShortCode(shortCode)
+            .orElseThrow(() -> new RuntimeException("Short code not found"));
+
+        if (!url.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You dont own this url");
+        }
+
+        url.setHasQrCode(true);
+        urlRepository.save(url);
+
+        // Evict caches
+        redisTemplate.delete("url:" + shortCode);
+        redisTemplate.delete(userUrlsCacheKey(user.getId()));
+
+        return true;
+    }
+
+    // Revokes a QR Code for a link.
+    @Transactional
+    public boolean revokeQrCode(String shortCode) {
+        User user = authUtils.getCurrentUser();
+        Url url = urlRepository.findByShortCode(shortCode)
+            .orElseThrow(() -> new RuntimeException("Short code not found"));
+
+        if (!url.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You dont own this url");
+        }
+
+        url.setHasQrCode(false);
+        urlRepository.save(url);
+
+        // Evict caches
+        redisTemplate.delete("url:" + shortCode);
+        redisTemplate.delete(userUrlsCacheKey(user.getId()));
+
+        return false;
     }
 }

@@ -81,7 +81,9 @@ All protected routes require `Authorization: Bearer <JWT_TOKEN>`.
 | `PATCH` | `/urls/{code}/toggle` | Enable / disable link | Yes |
 | `DELETE` | `/urls/{code}` | Delete link + logs + cache | Yes |
 | `GET` | `/urls/{code}/analytics` | Click analytics | Yes |
-| `GET` | `/{code}` | Public redirect (302) | No |
+| `POST` | `/urls/{code}/qr` | Generate QR Code state | Yes |
+| `DELETE` | `/urls/{code}/qr` | Revoke/disable QR Code state | Yes |
+| `GET` | `/{code}` | Public redirect (302) OR raw PNG QR image (if `?format=qr`) | No |
 
 ---
 
@@ -135,6 +137,7 @@ urls
   created_at    timestamp
   expires_at    timestamp
   is_active     boolean
+  has_qr_code   boolean
   user_id       bigint FK → users.id
 
 clicks

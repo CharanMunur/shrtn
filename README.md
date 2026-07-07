@@ -1,163 +1,51 @@
-# Shrtn — URL Shortener
+# Shrtn — Production-Grade URL Shortener
 
-A fast, full-stack URL shortener with click analytics, OTP-based auth, and a Redis-backed redirect engine. Live at **[app.shrtn.fun](https://app.shrtn.fun)** — short links resolve via **[shrtn.fun](https://shrtn.fun)**.
+A fast, full-stack URL shortener with click analytics, OTP-based authentication, a Redis-backed redirect engine, and dynamic QR Code generation. 
 
-## Live URLs
+## Live Services
 
-| Service | URL |
-|---|---|
-| Frontend (Dashboard) | [app.shrtn.fun](https://app.shrtn.fun) |
-| Short links | `shrtn.fun/{code}` |
-| Backend API | [shrtn.fun](https://shrtn.fun) (Render) |
+- **Frontend App**: [app.shrtn.fun](https://app.shrtn.fun) (Vercel)
+- **API & Short Links**: [shrtn.fun](https://shrtn.fun) (Render)
 
 ---
 
-## Tech Stack
+## Directory Structure
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Recharts |
-| **Backend** | Java 25, Spring Boot 4, Spring Security (JWT) |
-| **Database** | PostgreSQL (Supabase) via Spring Data JPA |
-| **Cache** | Redis (Upstash) via Spring Data Redis |
-| **Email** | [Resend](https://resend.com) API (`noreply@shrtn.fun`) |
-| **Analytics** | [Umami](https://umami.is) (self-hosted analytics script) |
-| **Hosting** | Vercel (frontend) · Render (backend) |
+This repository is organized as a monorepo:
+
+- **[client/](./client)**: React 19 + Vite frontend. Features clean modern dashboard styling with Tailwind CSS v4, Framer Motion page transitions, Recharts analytics, and dynamic QR Code actions. See the [Client README](./client/README.md) for details.
+- **[server/](./server)**: Java 25 + Spring Boot 4 REST API. Backed by PostgreSQL (Supabase), Upstash Redis caching, and the Resend API for transactional email verification. See the [Server README](./server/README.md) for details.
 
 ---
 
-## Architecture & System Design
+## Architecture Overview
 
-### Redirect Flow
-
-Short links (`shrtn.fun/{code}`) point directly to the Render backend — no frontend hop involved:
-
-```text
-User visits shrtn.fun/{code}
-        │
-        ▼
-  ┌───────────┐  Hit   ┌──────────────────┐
-  │  Redis    ├───────►│  302 → destination│
-  │  Cache?   │        └──────────────────┘
-  └─────┬─────┘
-        │ Miss
-        ▼
-  ┌───────────┐  No    ┌──────────────────┐
-  │ Exist in  ├───────►│  404 / Inactive  │
-  │    DB?    │        └──────────────────┘
-  └─────┬─────┘
-        │ Yes + Active
-        ▼
-  Cache in Redis (24h TTL) → Save click → 302 → destination
-```
-
-- **Hot-path cache:** `url:{shortCode}` → serialized `UrlCacheEntry` with `id`, `userId`, `originalUrl`, `isActive`, `expiresAt` (24h TTL)
-- **List cache:** `urls:{userId}` → serialized `UrlResponse[]` for My Links / dashboard counts (short TTL, evicted on click, shorten, toggle, delete)
-- **Analytics cache:** `analytics:{shortCode}` — evicted on every new click or delete
-- **Cache eviction:** toggle or delete immediately purges relevant Redis keys
-
-### Database Schema
-
-```mermaid
-erDiagram
-    USER {
-        bigint id PK
-        string email UK
-        string password
-        boolean is_verified
-    }
-    URL {
-        bigint id PK
-        string short_code UK
-        string original_url
-        timestamp created_at
-        timestamp expires_at
-        boolean is_active
-        bigint user_id FK
-    }
-    CLICK {
-        bigint id PK
-        timestamp clicked_at
-        string ip_address
-        string user_agent
-        bigint url_id FK
-    }
-    OTP {
-        bigint id PK
-        string code
-        string purpose
-        timestamp expires_at
-        bigint user_id FK
-    }
-
-    USER ||--o{ URL : "creates"
-    USER ||--o{ OTP : "receives"
-    URL ||--o{ CLICK : "logs"
-```
+1. **Redirect Path**: Public requests to `shrtn.fun/{shortCode}` bypass the React application, querying Upstash Redis first (24h cache) and falling back to Supabase PostgreSQL on misses. Clicks are logged with browser and OS analytics (using `ua-parser`), and the client is 302-redirected.
+2. **QR Code Resolution**: Append `?format=qr` to any valid short URL to dynamically resolve, render, and download its QR code image directly from the backend.
+3. **Caches**: Employs separate Redis caches for the redirect hot-path, user URL listings, and click analytics, with active invalidation strategies on writes.
 
 ---
 
-## API Reference
+## Quick Start (Local Development)
 
-All protected endpoints require `Authorization: Bearer <JWT_TOKEN>`.
+### Prerequisites
 
-| Method | Endpoint | Description | Auth |
-|:---|:---|:---|:---|
-| `POST` | `/api/v1/auth/register` | Register user, send verification OTP | No |
-| `POST` | `/api/v1/auth/verify-otp` | Verify email OTP, receive JWT | No |
-| `POST` | `/api/v1/auth/resend-otp` | Re-send OTP email | No |
-| `POST` | `/api/v1/auth/login` | Login, receive JWT | No |
-| `POST` | `/api/v1/auth/forgot-password` | Send password reset OTP | No |
-| `POST` | `/api/v1/auth/reset-password` | Reset password with OTP | No |
-| `POST` | `/api/v1/users/change-password` | Change current password | Yes |
-| `POST` | `/shorten` | Create short link (max 25/user) | Yes |
-| `GET` | `/urls` | List all user's links | Yes |
-| `PATCH` | `/urls/{shortCode}/toggle` | Toggle link active status | Yes |
-| `DELETE` | `/urls/{shortCode}` | Delete link + analytics | Yes |
-| `GET` | `/urls/{shortCode}/analytics` | Get click analytics | Yes |
-| `GET` | `/{shortCode}` | Public redirect | No |
+Ensure you have **Java 25**, **Bun** (or **Node.js**), and a local/cloud database config.
 
----
+### 1. Launch Backend API
 
-## Environment Setup
-
-### Backend (`server/.env`)
-
-```env
-DB_URL=              # PostgreSQL JDBC connection string
-DB_USERNAME=         # PostgreSQL username
-DB_PASSWORD=         # PostgreSQL password
-REDIS_HOST=          # Upstash Redis host
-REDIS_PORT=          # Upstash Redis port
-REDIS_PASSWORD=      # Upstash Redis password
-JWT_SECRET=          # HMAC-SHA256 signing key
-RESEND_API_KEY=      # Resend API key (re_...)
-CORS_ALLOWED_ORIGINS=https://app.shrtn.fun
-```
-
-### Frontend (`client/.env`)
-
-```env
-VITE_API_BASE_URL=https://shrtn.fun
-VITE_PUBLIC_SHORT_URL_BASE=https://shrtn.fun
-```
-
----
-
-## Getting Started (Local)
-
-### Backend
 ```bash
 cd server
-cp .env.example .env   # fill in your values
-./gradlew bootRun
+cp .env.example .env   # configure environment variables
+./gradlew bootRun      # runs on http://localhost:8080
 ```
 
-### Frontend
+### 2. Launch React Dashboard
+
 ```bash
 cd client
 bun install            # or npm install
-bun run dev            # or npm run dev
+bun run dev            # runs on http://localhost:5173 (proxied to :8080)
 ```
 
 ---

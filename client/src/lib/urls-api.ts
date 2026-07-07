@@ -49,3 +49,23 @@ export async function getUrlAnalytics(
     token,
   })
 }
+
+export async function generateQrCodeApi(
+  shortCode: string,
+  token: string
+): Promise<boolean> {
+  return requestJson<boolean>(`/urls/${shortCode}/qr`, {
+    method: "POST",
+    token,
+  })
+}
+
+export async function revokeQrCodeApi(
+  shortCode: string,
+  token: string
+): Promise<boolean> {
+  return requestJson<boolean>(`/urls/${shortCode}/qr`, {
+    method: "DELETE",
+    token,
+  })
+}

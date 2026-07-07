@@ -21,6 +21,9 @@ public class UrlResponse {
     
     @Getter(onMethod_ = {@JsonProperty("isActive")})
     private boolean isActive;
+
+    @Getter(onMethod_ = {@JsonProperty("hasQrCode")})
+    private boolean hasQrCode;
     
     @Getter
     private LocalDateTime expiresAt;

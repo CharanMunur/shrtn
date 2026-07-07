@@ -48,5 +48,9 @@ public class Url {
     @Builder.Default
     private boolean isActive = true;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean hasQrCode = false;
+
     private LocalDateTime expiresAt;
 }

@@ -44,6 +44,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/health").permitAll()
+                .requestMatchers("/urls/**", "/shorten").authenticated()
                 .requestMatchers("/{shortCode}").permitAll() // Allow redirect without auth
                 .anyRequest().authenticated()
             )

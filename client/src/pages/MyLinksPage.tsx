@@ -9,12 +9,22 @@ import {
   Link2,
   CheckCircle2,
   Clock,
+  QrCode,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/providers/auth-provider"
 import { getUserUrls, toggleUrl, deleteUrl } from "@/lib/urls-api"
 import { ApiError } from "@/lib/api"
 import { formatRelativeTime, enrichUrls, type EnrichedUrl } from "@/lib/url"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 interface MyLinksPageProps {
   onViewAnalytics: (shortCode: string) => void
@@ -29,6 +39,25 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
   const [togglingUrl, setTogglingUrl] = useState<string | null>(null)
   const [deletingUrl, setDeletingUrl] = useState<string | null>(null)
   const [confirmDeleteUrl, setConfirmDeleteUrl] = useState<string | null>(null)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [qrCodeCode, setQrCodeCode] = useState<string>("")
+
+  async function handleDownloadQrCode(shortUrl: string, shortCode: string) {
+    try {
+      const response = await fetch(`${shortUrl}?format=qr`)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `shrtn-${shortCode}-qr.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("Failed to download QR code", err)
+    }
+  }
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -241,6 +270,18 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
 
                       <button
                         type="button"
+                        onClick={() => {
+                          setQrCodeUrl(url.shortUrl)
+                          setQrCodeCode(url.shortCode)
+                        }}
+                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-muted border border-border/50 cursor-pointer"
+                      >
+                        <QrCode className="h-3.5 w-3.5" />
+                        QR Code
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => handleCopy(url.shortUrl)}
                         className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-muted border border-border/50 cursor-pointer"
                       >
@@ -357,6 +398,16 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                         : <Copy className="h-4 w-4" />}
                     </IconBtn>
 
+                    <IconBtn
+                      title="QR Code"
+                      onClick={() => {
+                        setQrCodeUrl(url.shortUrl)
+                        setQrCodeCode(url.shortCode)
+                      }}
+                    >
+                      <QrCode className="h-4 w-4" />
+                    </IconBtn>
+
                     <a
                       href={url.shortUrl}
                       target="_blank"
@@ -411,6 +462,47 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
           {urls.reduce((sum, u) => sum + u.totalClicks, 0).toLocaleString()} total clicks
         </p>
       )}
+
+      {/* QR Code Dialog */}
+      <Dialog open={!!qrCodeUrl} onOpenChange={(open) => { if (!open) setQrCodeUrl(null); }}>
+        <DialogContent className="sm:max-w-xs p-5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+              <QrCode className="h-5 w-5 text-primary" />
+              Link QR Code
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Scan the QR code to visit: <code className="text-primary font-mono font-bold">/{qrCodeCode}</code>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-4 bg-muted/20 rounded-lg border border-border/50 my-2">
+            {qrCodeUrl && (
+              <img
+                src={`${qrCodeUrl}?format=qr`}
+                alt={`QR Code for /${qrCodeCode}`}
+                className="h-44 w-44 bg-white p-2 border border-border shadow-xs"
+              />
+            )}
+          </div>
+          <DialogFooter className="flex gap-2 sm:justify-between pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setQrCodeUrl(null)}
+              className="w-full sm:w-auto text-xs"
+            >
+              Close
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleDownloadQrCode(qrCodeUrl!, qrCodeCode)}
+              className="w-full sm:w-auto text-xs flex items-center justify-center gap-1.5"
+            >
+              Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
