@@ -10,32 +10,32 @@ import {
   Sliders,
   QrCode,
   Download,
+  Menu
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
 
 const containerVariants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.08,
+      staggerChildren: 0.1,
     },
   },
-} as const
+}
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
       type: "spring",
-      stiffness: 110,
-      damping: 14,
+      stiffness: 100,
+      damping: 15,
       mass: 1,
     },
   },
-} as const
+}
 
 const FAQ_ITEMS = [
   {
@@ -62,355 +62,346 @@ const FAQ_ITEMS = [
 
 export function LandingPage() {
   const navigate = useNavigate()
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
   
-  // Set SEO Meta title and description
+  // Ensure the page starts at the top
   useEffect(() => {
-    document.title = "Shrtn — Clean & Minimalist URL Shortener"
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) {
-      metaDesc.setAttribute("content", "Instantly shorten long URLs, manage your active links, and analyze redirection statistics in real time.")
-    }
+    window.scrollTo(0, 0)
+    document.title = "Shrtn — Intelligent Link Management"
   }, [])
 
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-
   return (
-    <div className="dark bg-background text-foreground min-h-screen flex flex-col font-sans">
-
-      {/* Sticky Glassmorphism Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6 w-full">
-          {/* Logo */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <Link2 className="h-4.5 w-4.5" />
-            </div>
-            <span className="font-bold tracking-tight text-foreground">Shrtn</span>
+    // We enforce light mode for the landing page to match the 0labs aesthetic
+    <div className="bg-[#FAFAFA] text-[#1E1E1E] min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-[#1E1E1E] selection:text-white">
+      
+      {/* Header */}
+      <header className="fixed top-0 inset-x-0 z-50 h-[80px] backdrop-blur-xl border-b grid grid-cols-[1fr_auto_1fr] items-center px-6 lg:px-12 gap-6" style={{ backgroundColor: 'rgba(252,252,252,0.55)', borderBottomColor: 'rgba(224,224,224,0.4)' }}>
+        <div className="flex items-center justify-self-start gap-2 cursor-pointer" onClick={() => navigate("/")}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E1E1E] text-white shadow-sm">
+            <Link2 className="h-5 w-5" />
           </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/signin")}
-              className="cursor-pointer text-xs font-semibold"
-            >
-              Sign in
-            </Button>
-            <Button size="sm" onClick={() => navigate("/signup")} className="cursor-pointer text-xs">
-              Sign up
-            </Button>
-          </div>
+          <span className="font-bold text-xl tracking-tight hidden sm:block">Shrtn</span>
         </div>
+
+        <nav className="hidden md:flex items-center gap-2 text-[14px] font-medium text-[#1E1E1E]/80 tracking-tight justify-self-center">
+          <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="px-4 py-2.5 rounded-xl hover:bg-[#EDEDED] hover:text-[#1E1E1E] transition-colors cursor-pointer">Features</button>
+          <button onClick={() => document.getElementById("analytics")?.scrollIntoView({ behavior: "smooth" })} className="px-4 py-2.5 rounded-xl hover:bg-[#EDEDED] hover:text-[#1E1E1E] transition-colors cursor-pointer">Analytics</button>
+          <button onClick={() => document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" })} className="px-4 py-2.5 rounded-xl hover:bg-[#EDEDED] hover:text-[#1E1E1E] transition-colors cursor-pointer">FAQ</button>
+        </nav>
+
+        <div className="hidden md:flex items-center gap-3 justify-self-end">
+          <button onClick={() => navigate("/signin")} className="px-6 py-3 text-[14px] font-medium rounded-xl bg-[#F5F5F5] border border-[#E0E0E0] hover:bg-[#EBEBEB] transition-colors cursor-pointer">
+            Sign in
+          </button>
+          <button onClick={() => navigate("/signup")} className="px-6 py-3 text-[14px] font-medium rounded-xl bg-[#1E1E1E] text-white shadow-sm hover:scale-[1.02] transition-transform flex items-center gap-1.5 cursor-pointer">
+            Get Started
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <button className="md:hidden p-2 rounded-xl hover:bg-[#F5F5F5] justify-self-end text-[#1E1E1E]">
+          <Menu className="h-5 w-5" />
+        </button>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 w-full flex flex-col items-center">
-
+      <main className="flex-1 w-full relative z-10">
+        
         {/* Hero Section */}
-        <motion.section
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="relative w-full min-h-[calc(100vh-3.5rem)] px-4 sm:px-6 flex flex-col items-center justify-center text-center overflow-hidden border-b border-border bg-gradient-to-b from-background via-muted/5 to-background"
-        >
-          {/* Subtle Ambient Gradient Light */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
+        <section className="relative min-h-screen flex items-center justify-center pt-[80px] overflow-hidden">
+          {/* Decorative background elements inspired by 0labs */}
+          <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" style={{ maskImage: 'linear-gradient(180deg, #000 0%, #000 30%, rgba(0,0,0,0.7) 55%, rgba(0,0,0,0.25) 75%, transparent 92%)', WebkitMaskImage: 'linear-gradient(180deg, #000 0%, #000 30%, rgba(0,0,0,0.7) 55%, rgba(0,0,0,0.25) 75%, transparent 92%)' }}>
+            <div className="absolute hidden md:block left-[-100px] top-[-50px] w-[210px] h-[760px] rounded-full bg-gradient-to-b from-[#F3F3F3] to-[#DEDEDE] opacity-55 -rotate-[22deg] blur-[1px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),_0_24px_60px_-28px_rgba(0,0,0,0.10)]" />
+            <div className="absolute hidden md:block left-[40px] top-[10px] w-[140px] h-[680px] rounded-full bg-gradient-to-b from-[#EFEFEF] to-[#D5D5D5] opacity-70 -rotate-[22deg] blur-[0.5px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),_0_24px_60px_-28px_rgba(0,0,0,0.10)]" />
+            <div className="absolute hidden md:block right-[-120px] top-[-20px] w-[210px] h-[740px] rounded-full bg-gradient-to-b from-[#F3F3F3] to-[#DEDEDE] opacity-55 rotate-[22deg] blur-[1px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),_0_24px_60px_-28px_rgba(0,0,0,0.10)]" />
+            <div className="absolute hidden md:block right-[20px] top-[60px] w-[140px] h-[660px] rounded-full bg-gradient-to-b from-[#EFEFEF] to-[#D5D5D5] opacity-65 rotate-[22deg] blur-[0.5px] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),_0_24px_60px_-28px_rgba(0,0,0,0.10)]" />
+          </div>
+          
+          <div className="absolute inset-x-0 bottom-0 h-[55%] z-[1] pointer-events-none bg-gradient-to-b from-[rgba(250,250,250,0)] via-[rgba(250,250,250,0.6)] to-[#FAFAFA]" />
 
-          <div className="relative max-w-3xl flex flex-col items-center z-10 py-12">
-
-
-            <motion.h1 variants={itemVariants} className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-foreground text-center">
-              Clean Short Links.<br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
-                Instant visitor insights.
-              </span>
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="relative z-[2] w-full max-w-4xl mx-auto text-center px-6"
+          >
+            <motion.h1 
+              variants={itemVariants}
+              className="font-serif text-[42px] leading-[1.05] sm:text-[56px] md:text-[72px] lg:text-[84px] tracking-tight text-[#1E1E1E]"
+            >
+              Short links.<br/>
+              <span className="font-sans font-medium tracking-tight">Powerful analytics.</span>
             </motion.h1>
-
-            <motion.p variants={itemVariants} className="mx-auto max-w-xl text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 text-center">
-              Transform long, clunky URLs into short, shareable links. Generate custom QR codes and track visitor click counts, browsers, and devices immediately from a private dashboard.
+            
+            <motion.p 
+              variants={itemVariants}
+              className="mt-7 text-[16px] md:text-[19px] text-[#1E1E1E]/60 max-w-xl mx-auto leading-relaxed"
+            >
+              Transform long, clunky URLs into short, shareable links. Track click counts, device types, and operating systems from a clean, distraction-free dashboard.
             </motion.p>
-
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full max-w-md">
-              <Button
-                onClick={() => navigate("/signup")}
-                className="gap-2 px-5 h-10 text-xs shadow-xs cursor-pointer w-full sm:w-auto font-semibold"
-              >
-                Get Started for Free
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const element = document.getElementById("how-it-works")
-                  element?.scrollIntoView({ behavior: "smooth" })
-                }}
-                className="h-10 text-xs cursor-pointer w-full sm:w-auto font-semibold"
-              >
-                Learn More
-              </Button>
+            
+            <motion.div 
+              variants={itemVariants}
+              className="mt-10 flex items-center justify-center gap-4 flex-wrap"
+            >
+              <button onClick={() => navigate("/signup")} className="px-8 py-4 text-[15px] font-medium rounded-xl bg-[#1E1E1E] text-white shadow-lg shadow-black/10 hover:scale-[1.02] transition-transform flex items-center gap-2 cursor-pointer">
+                Start for free
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="px-8 py-4 text-[15px] font-medium rounded-xl bg-white border border-[#E0E0E0] text-[#1E1E1E] shadow-sm hover:bg-[#F5F5F5] transition-colors cursor-pointer">
+                See how it works
+              </button>
             </motion.div>
-          </div>
-        </motion.section>
-
-        {/* How It Works Section */}
-        <section id="how-it-works" className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-muted/5 relative">
-          <div className="w-full max-w-5xl px-4 sm:px-6">
-            <div className="text-center mb-16">
-
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Three Steps to Better Links
-              </h2>
-              <p className="mt-2 text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
-                Shrtn streamlines the process of sharing URLs and monitoring their performance.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-              {/* Process Step 1 */}
-              <div className="flex flex-col items-start p-6 rounded-xl border border-border/60 bg-card text-left relative">
-                <span className="absolute -top-4 left-6 text-3xl font-black text-primary/10 select-none">01</span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 font-bold">
-                  <Sliders className="h-5 w-5" />
-                </div>
-                <h3 className="text-base font-bold text-foreground mb-2">1. Shorten URLs</h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Paste any long, query-heavy link into our shorten form. Generate a clean, 6-character Base62 short URL instantly.
-                </p>
-              </div>
-
-              {/* Process Step 2 */}
-              <div className="flex flex-col items-start p-6 rounded-xl border border-border/60 bg-card text-left relative">
-                <span className="absolute -top-4 left-6 text-3xl font-black text-primary/10 select-none">02</span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 font-bold">
-                  <QrCode className="h-5 w-5" />
-                </div>
-                <h3 className="text-base font-bold text-foreground mb-2">2. Enable QR Codes</h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Turn on QR codes for your short URLs. Scan them or download high-resolution PNG files directly for print or digital media.
-                </p>
-              </div>
-
-              {/* Process Step 3 */}
-              <div className="flex flex-col items-start p-6 rounded-xl border border-border/60 bg-card text-left relative">
-                <span className="absolute -top-4 left-6 text-3xl font-black text-primary/10 select-none">03</span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 font-bold">
-                  <BarChart3 className="h-5 w-5" />
-                </div>
-                <h3 className="text-base font-bold text-foreground mb-2">3. Track Analytics</h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Access click timelines, browser logs, OS splits, and real-time counters from your private analytics dashboard.
-                </p>
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* Feature Showcase: Analytics */}
-        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-background relative">
-          <div className="w-full max-w-5xl px-4 sm:px-6">
-            <div className="flex flex-col md:flex-row items-center gap-12">
-              <div className="flex-1 text-left space-y-4">
-
-                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                  Monitor Redirection Stats in Real Time
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Understand exactly who is visiting your short links. The analytics dashboard compiles click history and classifies client request details into readable graphs and metrics:
+        {/* Marquee Section */}
+        <section className="pb-24 md:pb-32 bg-[#FAFAFA]">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <div className="grid md:grid-cols-[260px_1fr] gap-12 md:gap-16 items-center">
+              <div>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <circle cx="4" cy="4" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
+                  <circle cx="14" cy="4" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
+                  <circle cx="14" cy="14" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
+                  <circle cx="4" cy="14" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
+                </svg>
+                <p className="mt-5 text-[13.5px] text-[#1E1E1E]/60 leading-snug">
+                  Powered by modern<br/>web technologies
                 </p>
-                <ul className="space-y-2.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>Real-time click counts and time series graphs (7d, 30d, all-time)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>User-agent breakdown: Browser & OS classifications (Chrome, Safari, macOS, Linux, etc.)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>Click log audits containing IP logs and relative timestamps</span>
-                  </li>
-                </ul>
               </div>
-
-              <div className="flex-1 w-full max-w-md border border-border bg-card p-5 rounded-2xl shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="text-xs font-bold text-foreground">Visits Over Time</span>
-                  <span className="text-[10px] font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">7 Days</span>
-                </div>
-                {/* Fake Chart Preview */}
-                <div className="h-32 flex items-end gap-2.5 px-2 bg-muted/20 rounded-lg border border-border/45 py-2">
-                  {[20, 45, 30, 80, 50, 95, 70].map((h, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                      <div
-                        className="w-full bg-primary/20 hover:bg-primary rounded-t transition-all duration-300"
-                        style={{ height: `${h}%` }}
-                      />
-                      <span className="text-[9px] text-muted-foreground font-mono">Day {i + 1}</span>
+              <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
+                <div className="flex items-center w-max gap-x-24 animate-[marquee_30s_linear_infinite]">
+                  {/* Fake tech logos to represent stack */}
+                  {['React', 'Spring Boot', 'PostgreSQL', 'Redis', 'Vercel', 'Render'].map((tech, i) => (
+                    <div key={i} className="flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity font-bold text-2xl tracking-tighter">
+                      {tech}
+                    </div>
+                  ))}
+                  {/* Duplicate for infinite effect */}
+                  {['React', 'Spring Boot', 'PostgreSQL', 'Redis', 'Vercel', 'Render'].map((tech, i) => (
+                    <div key={`dup-${i}`} className="flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity font-bold text-2xl tracking-tighter">
+                      {tech}
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between text-[10px] font-mono pt-1 text-muted-foreground">
-                  <span>Total Clicks: <strong className="text-foreground">245</strong></span>
-                  <span>Avg/Day: <strong className="text-foreground">35</strong></span>
-                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Feature Showcase: QR Code Ecosystem */}
-        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-muted/5 relative">
-          <div className="w-full max-w-5xl px-4 sm:px-6">
-            <div className="flex flex-col md:flex-row-reverse items-center gap-12">
-              <div className="flex-1 text-left space-y-4">
-
-                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                  Built-in Custom QR Code Engine
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Every shortened URL includes a direct path to its own QR code, ideal for packaging, physical signage, business cards, or offline ads.
-                </p>
-                <ul className="space-y-2.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>Clean QR Codes generated on-the-fly directly from the backend API</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>Downloadable high-resolution PNG format for easy printing</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>Enable or disable QR codes at any time from your dashboard</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Simulated QR Code Card */}
-              <div className="flex-1 w-full max-w-xs border border-border bg-card overflow-hidden rounded-2xl shadow-xs">
-                <div className="aspect-square w-full bg-white flex items-center justify-center border-b border-border/80 p-6">
-                  {/* Fake QR Image placeholder */}
-                  <div className="relative h-44 w-44 bg-muted flex items-center justify-center rounded border border-border border-dashed">
-                    <QrCode className="h-20 w-20 text-muted-foreground/30 animate-pulse" />
-                    <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent pointer-events-none" />
-                  </div>
+        {/* Features / Thesis Section */}
+        <section id="features" className="py-20 bg-[#FAFAFA]">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <div className="relative bg-[#F5F5F5] rounded-[32px] border border-[#E0E0E0] p-8 md:p-12 lg:p-16 overflow-hidden">
+              <div className="grid lg:grid-cols-[1fr_1.05fr] gap-12 lg:gap-16 min-h-[480px]">
+                
+                <div className="flex flex-col">
+                  <h2 className="font-serif text-[36px] leading-[1.1] text-[#1E1E1E]">Shrtn: Our Thesis</h2>
+                  <p className="mt-5 text-[15px] text-[#1E1E1E]/65 max-w-[420px] leading-relaxed">
+                    We built a URL shortener focused on speed, simplicity, and actionable data. No bloated dashboards or complex pricing tiers. Just clean links and deep insights into your audience.
+                  </p>
+                  <button onClick={() => navigate("/signup")} className="mt-8 w-fit px-5 py-2.5 text-[13px] font-medium rounded-xl bg-white border border-[#E0E0E0] hover:bg-[#EBEBEB] transition-colors flex items-center gap-1.5 cursor-pointer">
+                    Start shortening <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                  
+                  <ul className="mt-auto pt-16 space-y-5">
+                    {['Ultra-fast redirects via Redis', 'Detailed click analytics', 'QR code generation', 'Privacy-focused tracking'].map((item, i) => (
+                      <li key={i} className="flex items-center gap-4 text-left group">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
+                          <circle cx="4" cy="4" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
+                          <circle cx="14" cy="4" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
+                          <circle cx="4" cy="14" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
+                          <circle cx="14" cy="14" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
+                        </svg>
+                        <span className={`text-[14.5px] transition-colors ${i === 0 ? "text-[#1E1E1E] font-medium" : "text-[#1E1E1E]/40 group-hover:text-[#1E1E1E]/70"}`}>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="p-4 flex items-center justify-between bg-card text-left">
-                  <div>
-                    <p className="text-xs font-mono font-bold text-primary">/mK9mPq</p>
-                    <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">shrtn.fun/mK9mPq</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 px-2.5">
-                    <Download className="h-3 w-3" /> Download
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Feature Showcase: Limits & Status Controls */}
-        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-background relative">
-          <div className="w-full max-w-5xl px-4 sm:px-6">
-            <div className="flex flex-col md:flex-row items-center gap-12">
-              <div className="flex-1 text-left space-y-4">
-
-                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                  Keep Your Redirects Clean & Organized
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  We enforce simple, sensible limits to prevent spam, maintain maximum database performance, and ensure your redirection link flows remain secure.
-                </p>
-                <ul className="space-y-2.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span><strong>25 Links Quota</strong>: Manage up to 25 links. Recycle slots by deleting old links.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span><strong>30-Day Auto Expiry</strong>: Links expire 30 days after creation to prevent link rot.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span><strong>Status Switcher</strong>: Toggle links to &apos;Inactive&apos; to pause redirection instantly.</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="flex-1 w-full max-w-md border border-border bg-card p-5 rounded-2xl shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="text-xs font-bold text-foreground">Quota & Controls</span>
-                  <span className="text-[10px] font-semibold text-green-500 bg-green-950/20 px-2 py-0.5 rounded border border-green-500/20">Secure</span>
-                </div>
-                {/* Quota visual */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">URL Quota Usage</span>
-                    <span className="font-bold font-mono">12 / 25 links</span>
-                  </div>
-                  <div className="w-full bg-muted h-3 rounded-full overflow-hidden border border-border/50">
-                    <div className="bg-primary h-full w-[48%]" />
-                  </div>
-                </div>
-                {/* Status Switcher visual */}
-                <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/40 pt-3">
-                  <div className="text-left">
-                    <p className="text-xs font-semibold text-foreground">Link Status</p>
-                    <p className="text-[10px] text-muted-foreground">Visitors will be redirected</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-4 bg-primary rounded-full relative flex items-center px-0.5 cursor-pointer">
-                      <div className="w-3 h-3 bg-background rounded-full translate-x-4 transition-transform" />
+                <div className="relative min-h-[500px] mt-8 lg:mt-0">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute top-0 right-0 w-[85%] max-w-[420px] bg-white border border-[#E0E0E0] rounded-[28px] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden z-10"
+                  >
+                    <div className="p-8 pb-10">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#1E1E1E] mb-6">
+                        <BarChart3 className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-serif text-[24px] leading-snug text-[#1E1E1E]">Actionable Analytics</h3>
+                      <p className="mt-4 text-[14px] text-[#1E1E1E]/60 leading-relaxed">
+                        Track every click in real-time. Our dashboard breaks down visitor data by device type, operating system, browser, and chronological timeline so you know exactly who is engaging with your content.
+                      </p>
                     </div>
-                    <span className="text-[10px] font-bold text-green-500 uppercase">Active</span>
-                  </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute top-40 left-0 w-[85%] max-w-[400px] bg-white border border-[#E0E0E0] rounded-[28px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.12)] overflow-hidden z-20"
+                  >
+                    <div className="p-8 pb-10">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1E1E1E] text-white mb-6">
+                        <QrCode className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-serif text-[24px] leading-snug text-[#1E1E1E]">Instant QR Codes</h3>
+                      <p className="mt-4 text-[14px] text-[#1E1E1E]/60 leading-relaxed">
+                        Bridge the gap between offline and online. Every shortened link automatically generates a scannable QR code that you can download in high-resolution for print materials.
+                      </p>
+                    </div>
+                  </motion.div>
                 </div>
+                
               </div>
             </div>
           </div>
         </section>
 
-        {/* Collapsible FAQ Section */}
-        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-b border-border bg-muted/5 relative">
-          <div className="w-full max-w-3xl px-4 sm:px-6">
-            <div className="text-center mb-12">
-
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Frequently Asked Questions
-              </h2>
+        {/* Highlight Metrics */}
+        <section id="analytics" className="py-24 bg-[#FAFAFA]">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-end mb-16">
+              <div>
+                <span className="inline-flex items-center gap-2 bg-[#F5F5F5] border border-[#E0E0E0] rounded-xl px-3 py-1 text-[12px] text-[#1E1E1E]/70 font-medium">
+                  Architecture
+                </span>
+                <h2 className="font-serif text-[36px] md:text-[48px] leading-[1.05] tracking-tight mt-5 text-[#1E1E1E]">
+                  Modern Infrastructure
+                </h2>
+              </div>
+              <p className="text-[15px] text-[#1E1E1E]/60 leading-relaxed max-w-md md:justify-self-end">
+                Our redirection engine relies on a Redis cache layer for fast lookups, ensuring your visitors get where they need to go quickly and reliably.
+              </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { label: "Caching", title: "Redis Lookups", desc: "Redirects are served directly from memory, avoiding database queries on the hot path.", highlight: "O(1)", sub: "access time" },
+                { label: "Encoding", title: "Base62 Codes", desc: "Database IDs are encoded to generate compact, collision-free short URLs.", highlight: "6", sub: "character length" },
+                { label: "Security", title: "OTP Authentication", desc: "Stateless JWT sessions and email verification via Resend secure your account.", highlight: "JWT", sub: "stateless auth" }
+              ].map((card, i) => (
+                <motion.article 
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="bg-white rounded-[24px] border border-[#E0E0E0] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col min-h-[480px] overflow-hidden"
+                >
+                  <div className="p-8 pb-6">
+                    <span className="text-[12px] font-medium text-[#1E1E1E]/50 uppercase tracking-wider">{card.label}</span>
+                    <h3 className="font-serif mt-3 text-[22px] leading-snug text-[#1E1E1E]">{card.title}</h3>
+                    <p className="text-[14px] text-[#1E1E1E]/60 leading-relaxed mt-3">{card.desc}</p>
+                  </div>
+                  <div className="mx-5 mb-5 mt-auto rounded-2xl p-6 flex items-center justify-center h-[240px] bg-[#F5F5F5] border border-[#E0E0E0]">
+                    <div className="text-center">
+                      <p className="font-serif text-[48px] leading-none tracking-tight text-[#1E1E1E]">{card.highlight}</p>
+                      <p className="text-[13px] font-medium text-[#1E1E1E]/50 mt-3 uppercase tracking-widest">{card.sub}</p>
+                    </div>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Dashboard Preview Section */}
+        <section className="py-24 bg-[#FAFAFA]">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <div className="relative rounded-[32px] overflow-hidden bg-[#1E1E1E] text-white">
+              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #ffffff 0%, transparent 70%)' }}></div>
+              <div className="relative grid lg:grid-cols-[1fr_1.2fr] gap-12 p-10 md:p-16 items-center">
+                <div>
+                  <p className="inline-flex items-center gap-2 text-[13px] text-white/70 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                    Dashboard
+                  </p>
+                  <h2 className="font-serif text-[36px] md:text-[48px] leading-[1.1] tracking-tight mt-5">
+                    Total control over<br/>your links.
+                  </h2>
+                  <p className="mt-6 text-[16px] text-white/60 max-w-md leading-relaxed">
+                    Toggle links on or off instantly. View rich analytics, generate QR codes, and manage your account from a minimalist, distraction-free interface.
+                  </p>
+                  <button onClick={() => navigate("/signup")} className="mt-10 px-8 py-4 bg-white text-[#1E1E1E] rounded-xl text-[14px] font-medium hover:bg-white/90 transition-colors flex items-center gap-2 cursor-pointer">
+                    Create your account <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                <motion.div 
+                  initial={{ opacity: 0, x: 30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="lg:justify-self-end w-full"
+                >
+                  <div className="bg-white text-[#1E1E1E] rounded-[24px] shadow-2xl overflow-hidden border border-white/20">
+                    <div className="px-6 py-4 border-b border-[#E0E0E0] flex items-center gap-2 bg-[#F5F5F5]">
+                      <div className="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#FEBC2E]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#28C840]"></div>
+                    </div>
+                    <div className="p-6 md:p-8 space-y-6">
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <h3 className="font-bold text-[20px]">shrtn.fun/xK9mPq</h3>
+                          <p className="text-[13px] text-[#1E1E1E]/50 mt-1">Redirects to: https://very-long-url.com/...</p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-[12px] font-medium">
+                          Active
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#E0E0E0]">
+                        <div className="bg-[#F5F5F5] rounded-xl p-4">
+                          <p className="text-[12px] text-[#1E1E1E]/50 font-medium">Total Clicks</p>
+                          <p className="text-[28px] font-bold mt-1">1,248</p>
+                        </div>
+                        <div className="bg-[#F5F5F5] rounded-xl p-4">
+                          <p className="text-[12px] text-[#1E1E1E]/50 font-medium">Top Browser</p>
+                          <p className="text-[28px] font-bold mt-1">Chrome</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="py-24 bg-[#FAFAFA]">
+          <div className="max-w-[800px] mx-auto px-6 lg:px-12">
+            <h2 className="font-serif text-[32px] md:text-[40px] tracking-tight text-center text-[#1E1E1E] mb-12">
+              Frequently Asked Questions
+            </h2>
+
+            <div className="space-y-4">
               {FAQ_ITEMS.map((item, index) => {
                 const isOpen = openFaq === index
                 return (
-                  <div
-                    key={index}
-                    className="rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-muted-foreground/30"
-                  >
+                  <div key={index} className="rounded-2xl border border-[#E0E0E0] bg-white overflow-hidden transition-all hover:border-[#1E1E1E]/30 shadow-sm">
                     <button
                       onClick={() => setOpenFaq(isOpen ? null : index)}
-                      className="w-full py-4 px-5 text-left font-semibold text-foreground flex items-center justify-between focus:outline-none cursor-pointer border-0 bg-transparent"
+                      className="w-full py-5 px-6 text-left font-medium text-[#1E1E1E] flex items-center justify-between cursor-pointer focus:outline-none"
                     >
-                      <span className="text-xs sm:text-sm pr-4">{item.question}</span>
-                      <ChevronDown
-                        className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
-                          isOpen ? "rotate-180 text-foreground" : ""
-                        }`}
-                      />
+                      <span className="text-[15px] pr-4">{item.question}</span>
+                      <ChevronDown className={`h-5 w-5 text-[#1E1E1E]/40 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180 text-[#1E1E1E]" : ""}`} />
                     </button>
-                    <AnimatePresence initial={false}>
+                    <AnimatePresence>
                       {isOpen && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
                         >
-                          <div className="px-5 pb-5 text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-3 text-left">
+                          <div className="px-6 pb-6 pt-1 text-[14px] text-[#1E1E1E]/60 leading-relaxed">
                             {item.answer}
                           </div>
                         </motion.div>
@@ -423,131 +414,67 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Call to Action Section */}
-        <section className="w-full min-h-[calc(100vh-3.5rem)] py-16 flex flex-col items-center justify-center border-t border-border bg-muted/5 relative">
-          <div className="w-full max-w-3xl px-4 sm:px-6 text-center flex flex-col items-center">
-            <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <Link2 className="h-5.5 w-5.5" />
-            </div>
-            
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">
-              Start Shortening Links Today
+        {/* Final CTA */}
+        <section className="py-32 bg-[#FAFAFA] text-center border-b border-[#E0E0E0]">
+          <div className="max-w-2xl mx-auto px-6">
+            <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.1] tracking-tight text-[#1E1E1E]">
+              Ready to simplify<br/>your links?
             </h2>
-            <p className="text-muted-foreground text-xs sm:text-sm mb-8 max-w-md leading-relaxed">
-              Register for your free account, shorten your first link, and observe click updates in real time. No passwords or credit cards needed.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs sm:max-w-none">
-              <Button
-                onClick={() => navigate("/signup")}
-                className="gap-2 px-5 h-10 text-xs shadow-xs cursor-pointer w-full sm:w-auto font-semibold"
-              >
-                Create Free Account
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/signin")}
-                className="h-10 text-xs cursor-pointer w-full sm:w-auto font-semibold"
-              >
-                Already have an account? Sign in
-              </Button>
-            </div>
+            <button onClick={() => navigate("/signup")} className="mt-10 px-8 py-4 bg-[#1E1E1E] text-white rounded-xl text-[15px] font-medium shadow-xl hover:scale-[1.02] transition-transform inline-flex items-center gap-2 cursor-pointer">
+              Get Started Now <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </section>
 
       </main>
 
-      {/* Clean Minimalist Footer */}
-      <footer className="border-t border-border bg-background py-10">
-        <div className="w-full mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-8 pb-8">
-            {/* Brand */}
-            <div className="max-w-xs text-left">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground">
-                  <Link2 className="h-4 w-4" />
+      {/* Footer */}
+      <footer className="w-full bg-[#1A1A1A] text-white pt-20 pb-12 mt-auto">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 flex flex-col md:flex-row gap-12 lg:gap-24">
+          <div className="flex flex-col justify-between flex-1 min-w-[200px]">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#1A1A1A]">
+                  <Link2 className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-bold text-foreground tracking-tight">Shrtn</span>
+                <span className="font-bold text-xl tracking-tight">Shrtn</span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                A clean, minimalist link shortening tool built for creators, marketers, and temporary campaign sharing.
+              <p className="text-[14px] text-white/50 leading-relaxed max-w-xs">
+                A modern URL shortening service with robust analytics and simple management.
               </p>
             </div>
-
-            {/* Links */}
-            <div className="flex gap-16 text-left">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">App</p>
-                <ul className="space-y-2">
-                  <li>
-                    <button
-                      onClick={() => navigate("/dashboard")}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left focus:outline-none border-0 bg-transparent p-0"
-                    >
-                      Dashboard
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate("/dashboard")}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left focus:outline-none border-0 bg-transparent p-0"
-                    >
-                      Redirection Metrics
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate("/dashboard")}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left focus:outline-none border-0 bg-transparent p-0"
-                    >
-                      My Shortlinks
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Account</p>
-                <ul className="space-y-2">
-                  <li>
-                    <button
-                      onClick={() => navigate("/signin")}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left focus:outline-none border-0 bg-transparent p-0"
-                    >
-                      Sign In
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => navigate("/signup")}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left focus:outline-none border-0 bg-transparent p-0"
-                    >
-                      Sign Up
-                    </button>
-                  </li>
-                </ul>
-              </div>
+            <div className="mt-20 md:mt-12">
+              <p className="text-[13px] text-white/40 font-medium mb-6">© {new Date().getFullYear()} Shrtn</p>
             </div>
           </div>
 
-          {/* Copyright & Author */}
-          <div className="border-t border-border/50 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground">
-            <p>© {new Date().getFullYear()} Shrtn. All rights reserved.</p>
-            <p>
-              Made by{" "}
-              <a
-                href="https://www.charanmunur.in/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-foreground hover:text-primary transition-colors underline underline-offset-4 decoration-border hover:decoration-primary"
-              >
-                charanmunur
-              </a>
-            </p>
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-x-8 gap-y-12 flex-[2] md:justify-end">
+            <div className="flex flex-col gap-4">
+              <h4 className="text-[14px] font-semibold text-white mb-2">Product</h4>
+              <button onClick={() => navigate("/dashboard")} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Dashboard</button>
+              <button onClick={() => navigate("/signin")} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Sign In</button>
+              <button onClick={() => navigate("/signup")} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Sign Up</button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <h4 className="text-[14px] font-semibold text-white mb-2">Legal</h4>
+              <a href="#" className="text-[14px] text-white/60 hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="text-[14px] text-white/60 hover:text-white transition-colors">Terms of Service</a>
+              <a href="https://github.com/charanmunur" target="_blank" rel="noopener noreferrer" className="text-[14px] text-white/60 hover:text-white transition-colors mt-4">Made by charanmunur</a>
+            </div>
           </div>
         </div>
       </footer>
 
+      {/* Global CSS for the Marquee Animation added locally since we are replacing the global styles approach */}
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-[marquee_30s_linear_infinite] {
+          animation: marquee 30s linear infinite;
+        }
+      `}</style>
     </div>
   )
 }
