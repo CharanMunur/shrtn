@@ -1,20 +1,16 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, Variants } from "framer-motion"
 import {
   Link2,
   BarChart3,
   ArrowRight,
-  CheckCircle2,
   ChevronDown,
-  Sliders,
   QrCode,
-  Download,
   Menu
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -23,7 +19,7 @@ const containerVariants = {
   },
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
