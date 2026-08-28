@@ -18,11 +18,27 @@ This repository is organized as a monorepo:
 
 ---
 
+## Key Features
+
+- **Fast Redis Redirects**: Redirection engine backed by Upstash Redis (24h caching) with fallbacks to Supabase PostgreSQL.
+- **Interactive Vector World Map**: Visualizes click density instantly across country boundaries using a lightweight, self-contained, offline-first vector map, complete with hover highlighting and custom floating tooltips matching the Recharts popover style.
+- **GeoIP Location Tracking**: Resolves countries, regions, and cities using background lookup fallbacks to `ip-api.com` and proxy header extractions. Includes loopback client geolocation during local development tests.
+- **24x7 Traffic Activity Heatmap**: Custom punchcard visualizer graphing hourly click density across all days of the week, with modernized popover-style hover tooltips.
+- **Umami-Style Dashboard Panels**: Simplified, highly-organized layout with clean normal-casing headers, bottom active-border indicators, and bottom footer maximize buttons:
+  - *Environment*: Browsers, OS Types, and Devices.
+  - *Location*: Countries, Regions, and Cities (with dynamic country flag icons shown for regions and cities).
+- **Maximized Modals**: Click a card's footer "More" button to expand the tab into a spacious `max-w-4xl` dialog showing up to 100 detailed entries.
+- **Dynamic QR Code Actions**: Downloadable SVG QR Codes resolved instantly by appending `?format=qr` to shortened links.
+- **Reduced Roundness Styling**: Clean, modern, unified layout using sharp `rounded-lg` cards, modals, and elements for a polished user interface.
+- **Transactional Auth**: OTP security verified via Resend email delivery.
+
+---
+
 ## Architecture Overview
 
-1. **Redirect Path**: Public requests to `shrtn.fun/{shortCode}` bypass the React application, querying Upstash Redis first (24h cache) and falling back to Supabase PostgreSQL on misses. Clicks are logged with browser and OS analytics (using `ua-parser`), and the client is 302-redirected.
+1. **Redirect Path**: Public requests to `shrtn.fun/{shortCode}` bypass the React application, querying Upstash Redis first (24h cache) and falling back to Supabase PostgreSQL on misses. Clicks are logged with browser, OS, and country analytics, and the client is 302-redirected.
 2. **QR Code Resolution**: Append `?format=qr` to any valid short URL to dynamically resolve, render, and download its QR code image directly from the backend.
-3. **Caches**: Employs separate Redis caches for the redirect hot-path, user URL listings, and click analytics, with active invalidation strategies on writes.
+3. **Caches**: Employs separate Redis caches for the redirect hot-path, user URL listings, and click analytics, with active invalidation strategies on writes. Evicts click analytics caches instantly on redirect to ensure zero-lag click updates on the dashboard, combined with async geocoding updates.
 
 ---
 

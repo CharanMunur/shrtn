@@ -55,7 +55,7 @@ export function SettingsPage() {
       {/* Account status */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Account</h2>
+          <h2 className="text-sm font-semibold text-foreground">Account</h2>
         </div>
         <div className="px-6 py-5 space-y-3 text-sm">
           <div className="flex items-center justify-between">
@@ -76,7 +76,7 @@ export function SettingsPage() {
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-2">
           <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Change Password</h2>
+          <h2 className="text-sm font-semibold text-foreground">Change Password</h2>
         </div>
         <div className="px-6 py-5">
           <form onSubmit={handlePasswordSubmit} className="space-y-4">

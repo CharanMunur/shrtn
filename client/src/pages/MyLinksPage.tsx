@@ -161,13 +161,13 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
           {/* Table header - desktop only */}
-          <div className="hidden md:grid md:grid-cols-[6rem_1fr_5rem_8.5rem_8rem_9.5rem] gap-4 px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Code</span>
-            <span>Short URL</span>
-            <span className="text-right pr-2">Clicks</span>
-            <span className="text-center">Status</span>
-            <span>Expires</span>
-            <span>Actions</span>
+          <div className="hidden md:grid md:grid-cols-[6rem_1fr_5rem_8.5rem_8rem_9.5rem] gap-4 px-5 py-3 border-b border-border bg-muted/40 text-sm font-semibold text-muted-foreground/80">
+            <div>Code</div>
+            <div>Short URL</div>
+            <div className="text-right pr-2">Clicks</div>
+            <div className="text-center">Status</div>
+            <div>Expires</div>
+            <div>Actions</div>
           </div>
 
           {/* Rows */}
@@ -298,35 +298,14 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                         )}
                       </button>
 
-                      {confirmDeleteUrl === url.shortUrl ? (
-                        <div className="flex items-center gap-2 ml-2 shrink-0 bg-destructive/5 px-2 py-1 rounded-md border border-destructive/20 animate-in fade-in duration-200">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(url)}
-                            disabled={deletingUrl === url.shortUrl}
-                            className="text-xs text-destructive hover:underline font-semibold"
-                          >
-                            {deletingUrl === url.shortUrl ? "Deleting..." : "Confirm"}
-                          </button>
-                          <span className="text-border">|</span>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteUrl(null)}
-                            className="text-xs text-muted-foreground hover:underline"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteUrl(url.shortUrl)}
-                          className="flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-md border border-destructive/20 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteUrl(url.shortUrl)}
+                        className="flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-md border border-destructive/20 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </button>
                     </div>
                   </div>
 
@@ -387,15 +366,17 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                   </div>
 
                   {/* Actions */}
-                  <div className="hidden md:flex items-center gap-0.5">
+                  <div className="hidden md:flex items-center gap-1">
                     <IconBtn title="View analytics" onClick={() => onViewAnalytics(url.shortCode)}>
                       <BarChart2 className="h-4 w-4" />
                     </IconBtn>
 
                     <IconBtn title="Copy short URL" onClick={() => handleCopy(url.shortUrl)}>
-                      {copiedUrl === url.shortUrl
-                        ? <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        : <Copy className="h-4 w-4" />}
+                      {copiedUrl === url.shortUrl ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </IconBtn>
 
                     <IconBtn
@@ -418,35 +399,13 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                       <ExternalLink className="h-4 w-4" />
                     </a>
 
-                    {confirmDeleteUrl === url.shortUrl ? (
-                      <div className="flex items-center gap-1 ml-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(url)}
-                          disabled={deletingUrl === url.shortUrl}
-                          className="text-xs text-destructive hover:underline font-medium px-1"
-                        >
-                          {deletingUrl === url.shortUrl
-                            ? <Loader2 className="h-3 w-3 animate-spin" />
-                            : "Confirm"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteUrl(null)}
-                          className="text-xs text-muted-foreground hover:underline px-1"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <IconBtn
-                        title="Delete"
-                        onClick={() => setConfirmDeleteUrl(url.shortUrl)}
-                        className="hover:bg-destructive/10 hover:text-destructive animate-in fade-in duration-200"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </IconBtn>
-                    )}
+                    <IconBtn
+                      title="Delete"
+                      onClick={() => setConfirmDeleteUrl(url.shortUrl)}
+                      className="hover:bg-destructive/15 hover:text-destructive animate-in fade-in duration-200"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </IconBtn>
                   </div>
                 </div>
               )
@@ -499,6 +458,43 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
               className="w-full sm:w-auto text-xs flex items-center justify-center gap-1.5"
             >
               Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmDeleteUrl !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteUrl(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Link</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this shortened link? All click analytics history will be removed. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteUrl(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const target = urls.find(u => u.shortUrl === confirmDeleteUrl)
+                if (target) handleDelete(target)
+              }}
+              disabled={deletingUrl !== null}
+            >
+              {deletingUrl ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Link"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

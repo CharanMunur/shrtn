@@ -98,7 +98,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       {/* Quick actions */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-semibold text-foreground mb-3">
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -126,7 +126,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       {/* Recent links */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-foreground">
             Recent Links
           </h2>
           <button

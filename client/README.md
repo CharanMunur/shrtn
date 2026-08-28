@@ -9,7 +9,12 @@ The React web app for [Shrtn](https://app.shrtn.fun). Deployed on **Vercel** at 
 - **My Links** — management table with toggle, copy, delete, analytics, and QR overlay per link
 - **QR Codes** — dedicated dashboard grid to enable/disable QR codes and download high-resolution PNGs
 - **Shorten page** — paste a URL, get a `shrtn.fun/{code}` link instantly with quick QR code view
-- **Analytics** — browser/OS breakdowns, click timelines (Recharts)
+- **Analytics** — Browsers, OS, devices, countries, regions, and cities breakdowns, featuring:
+  - An **Interactive Vector World Map** visualizing click densities with floating hover popover tooltips.
+  - Parent country flags rendered dynamically inline next to region and city breakdowns.
+  - Click timeline graphs (Recharts).
+  - Traffic Activity heatmaps with popover tooltips.
+- **Modern UI Styling** — Unified sharp `rounded-lg` cards, modals, and elements.
 - **Theme** — light / dark / system toggle, persisted to localStorage
 - **Responsive** — desktop sidebar + mobile slide-out drawer
 - **Animations** — page transitions via Framer Motion
@@ -38,7 +43,8 @@ src/
 ├── components/
 │   ├── ui/                   # Reusable atomic UI primitives (button, switch, etc.)
 │   ├── auth-screen.tsx       # Sign-in, sign-up, OTP verification, password reset
-│   └── dashboard-shell.tsx   # Sidebar shell + nested routing
+│   ├── dashboard-shell.tsx   # Sidebar shell + nested routing
+│   └── WorldMap.tsx          # Interactive SVG world map component with hover tooltips
 ├── lib/
 │   ├── api.ts                # Fetch wrapper with auth headers & error handling
 │   ├── urls-api.ts           # Typed API functions (shorten, list, toggle, delete, analytics)

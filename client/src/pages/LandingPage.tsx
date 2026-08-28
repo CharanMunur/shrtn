@@ -8,7 +8,10 @@ import {
   ArrowRight,
   ChevronDown,
   QrCode,
-  Menu
+  Menu,
+  Zap,
+  Globe2,
+  Map
 } from "lucide-react"
 
 const containerVariants: Variants = {
@@ -253,7 +256,6 @@ export function LandingPage() {
                     </div>
                   </motion.div>
                 </div>
-                
               </div>
             </div>
           </div>
@@ -300,6 +302,62 @@ export function LandingPage() {
                       <p className="font-serif text-[48px] leading-none tracking-tight text-[#1E1E1E]">{card.highlight}</p>
                       <p className="text-[13px] font-medium text-[#1E1E1E]/50 mt-3 uppercase tracking-widest">{card.sub}</p>
                     </div>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* What's New / Next-Gen Analytics Section */}
+        <section className="py-24 bg-[#FAFAFA] border-t border-[#E0E0E0]/65">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-end mb-16">
+              <div>
+                <span className="inline-flex items-center gap-2 bg-[#1E1E1E] text-white rounded-xl px-3 py-1 text-[12px] font-medium">
+                  What's New in v2
+                </span>
+                <h2 className="font-serif text-[36px] md:text-[48px] leading-[1.05] tracking-tight mt-5 text-[#1E1E1E]">
+                  Next-Gen Visual Analytics
+                </h2>
+              </div>
+              <p className="text-[15px] text-[#1E1E1E]/60 leading-relaxed max-w-md md:justify-self-end">
+                We've upgraded our reporting engine with interactive vector world maps, regional details, and zero-lag real-time cache pipelines.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: <Globe2 className="h-5 w-5" />,
+                  title: "Interactive World Map",
+                  desc: "Visualize visitor distributions globally. Hover over country paths to view exact click counts in custom popover tooltips—running entirely offline and vector-native."
+                },
+                {
+                  icon: <Map className="h-5 w-5" />,
+                  title: "Region & City Flag Breakdowns",
+                  desc: "Drill deep into visitor details. Track states, regions, and cities next to dynamic country flag icons generated inline based on geographic parsing."
+                },
+                {
+                  icon: <Zap className="h-5 w-5" />,
+                  title: "Zero-Lag Cache Eviction",
+                  desc: "Never wait for click counts. Redis cache pipelines evict analytics indexes instantly on redirect, showing new clicks in real-time while background geocoding finishes."
+                }
+              ].map((item, i) => (
+                <motion.article 
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="bg-white rounded-[24px] border border-[#E0E0E0] p-8 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col justify-between min-h-[260px]"
+                >
+                  <div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F5F5F5] text-[#1E1E1E] mb-6 border border-[#E0E0E0]/60">
+                      {item.icon}
+                    </div>
+                    <h3 className="font-serif text-[20px] leading-snug text-[#1E1E1E]">{item.title}</h3>
+                    <p className="text-[14px] text-[#1E1E1E]/60 leading-relaxed mt-3">{item.desc}</p>
                   </div>
                 </motion.article>
               ))}
