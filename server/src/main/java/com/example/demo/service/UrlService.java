@@ -189,11 +189,10 @@ public class UrlService {
         // The background resolver will evict again once geolocation breakdowns are finalized.
         redisTemplate.delete("analytics:" + shortCode);
 
-        if (country == null) {
-            java.util.concurrent.CompletableFuture.runAsync(() -> {
-                resolveCountry(savedClick.getId(), ipAddress, shortCode);
-            });
-        }
+        // Always run the background resolver to fetch precise city and region data (since proxy headers only provide country)
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            resolveCountry(savedClick.getId(), ipAddress, shortCode);
+        });
 
         if (ownerUserId != null) {
             redisTemplate.delete(userUrlsCacheKey(ownerUserId));
