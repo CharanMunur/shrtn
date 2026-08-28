@@ -15,5 +15,6 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
     Long countByUser(User user);
     @Query("SELECT u.id FROM Url u WHERE u.shortCode = :shortCode")
     Optional<Long> findIdByShortCode(@Param("shortCode") String shortCode);
+    boolean existsByShortCode(String shortCode);
     
 }

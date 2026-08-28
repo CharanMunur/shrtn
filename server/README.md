@@ -47,7 +47,7 @@ The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun
 |---|---|---|---|
 | `url:{shortCode}` | Serialized `UrlCacheEntry` (`id`, `userId`, `originalUrl`, `isActive`, `expiresAt`) | 24h | Toggle off / Delete |
 | `urls:{userId}` | Serialized `UrlResponse[]` for My Links / dashboard counts | Short TTL | Click / Shorten / Toggle / Delete |
-| `analytics:{shortCode}` | Serialised analytics object | Until evicted | New click / Delete |
+| `analytics:{shortCode}` | Serialized analytics object | Until evicted | New click (evicted instantly in main thread + background resolver) / Delete |
 
 ---
 
@@ -143,8 +143,12 @@ urls
 clicks
   id            bigint PK
   clicked_at    timestamp
-  ip_address    varchar(255)
-  user_agent    varchar(255)
+  ip_address    varchar(45)
+  user_agent    varchar(512)
+  referrer      varchar(255)
+  country       varchar(100)
+  region        varchar(100)
+  city          varchar(100)
   url_id        bigint FK → urls.id
 
 otps
