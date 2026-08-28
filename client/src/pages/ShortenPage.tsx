@@ -19,7 +19,9 @@ const URL_LIMIT = 25
 export function ShortenPage() {
   const { token } = useAuth()
   const [longUrl, setLongUrl] = useState("")
-  const [result, setResult] = useState<{ shortCode: string; shortUrl: string } | null>(null)
+  const [customCode, setCustomCode] = useState("")
+  const [expiryOption, setExpiryOption] = useState<"1" | "7" | "30" | "90">("30")
+  const [result, setResult] = useState<{ shortCode: string; shortUrl: string; expiresAt: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
@@ -65,7 +67,16 @@ export function ShortenPage() {
     setResult(null)
     setCopied(false)
     try {
-      const data = await createShortUrl({ originalUrl: trimmed }, token!)
+      const offsetDate = new Date(Date.now() + parseInt(expiryOption) * 24 * 60 * 60 * 1000)
+      const expiresAtStr = new Date(offsetDate.getTime() - offsetDate.getTimezoneOffset() * 60000).toISOString().slice(0, 19)
+
+      const payload = {
+        originalUrl: trimmed,
+        customCode: customCode.trim() || undefined,
+        expiresAt: expiresAtStr,
+      }
+
+      const data = await createShortUrl(payload, token!)
       
       let shortUrl = ""
       if (data.shortUrl && data.shortUrl.includes("http")) {
@@ -87,8 +98,10 @@ export function ShortenPage() {
       setResult({
         shortCode,
         shortUrl,
+        expiresAt: data.expiresAt,
       })
       setUrlCount((c) => (c !== null ? c + 1 : c))
+      setCustomCode("")
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to shorten URL.")
     } finally {
@@ -187,6 +200,41 @@ export function ShortenPage() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label htmlFor="custom-code" className="text-sm font-medium">
+                Custom Alias (Optional)
+              </label>
+              <input
+                id="custom-code"
+                type="text"
+                placeholder="e.g. my-alias"
+                value={customCode}
+                onChange={(e) => setCustomCode(e.target.value)}
+                disabled={isLoading || atLimit}
+                className="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="expiry-option" className="text-sm font-medium">
+                Expiration
+              </label>
+              <select
+                id="expiry-option"
+                value={expiryOption}
+                onChange={(e) => setExpiryOption(e.target.value as any)}
+                disabled={isLoading || atLimit}
+                className="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <option value="30">30 Days (Default)</option>
+                <option value="1">1 Day</option>
+                <option value="7">7 Days</option>
+                <option value="90">90 Days</option>
+              </select>
+            </div>
+          </div>
+
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
               {error}
@@ -263,7 +311,7 @@ export function ShortenPage() {
             </a>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            This link will expire in 30 days. Find it in{" "}
+            This link will expire on {new Date(result.expiresAt).toLocaleDateString()}. Find it in{" "}
             <span className="text-foreground font-medium">My Links</span>.
           </p>
         </div>

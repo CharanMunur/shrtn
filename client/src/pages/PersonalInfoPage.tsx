@@ -32,7 +32,7 @@ export function PersonalInfoPage() {
       {/* Profile */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profile</h2>
+          <h2 className="text-sm font-semibold text-foreground">Profile</h2>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className="flex items-center gap-4">
@@ -51,11 +51,11 @@ export function PersonalInfoPage() {
 
           <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Username</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Username</p>
               <p className="text-sm font-medium text-foreground">{username}</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Email</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Email</p>
               <p className="text-sm font-medium text-foreground truncate">{email ?? "—"}</p>
             </div>
           </div>
@@ -65,7 +65,7 @@ export function PersonalInfoPage() {
       {/* Plan */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plan</h2>
+          <h2 className="text-sm font-semibold text-foreground">Plan</h2>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -114,7 +114,7 @@ export function PersonalInfoPage() {
       {/* Appearance */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Appearance</h2>
+          <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
         </div>
         <div className="px-6 py-5">
           <p className="text-sm text-muted-foreground mb-3">Choose your preferred interface theme.</p>

@@ -36,6 +36,8 @@ export type ChangePasswordRequest = {
 
 export type UrlRequest = {
   originalUrl: string
+  customCode?: string
+  expiresAt?: string
 }
 
 export type UrlResponse = {
@@ -63,4 +65,10 @@ export type UrlAnalyticsResponse = {
   browserBreakdown: Record<string, number>
   osBreakdown: Record<string, number>
   clicksByDate: Record<string, number>
+  referrerBreakdown: Record<string, number>
+  deviceBreakdown: Record<string, number>
+  countryBreakdown: Record<string, number>
+  regionBreakdown: Record<string, number>
+  cityBreakdown: Record<string, number>
+  trafficHeatmap: number[][]
 }
