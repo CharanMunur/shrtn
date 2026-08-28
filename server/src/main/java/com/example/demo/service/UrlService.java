@@ -63,28 +63,75 @@ public class UrlService {
 
         String originalUrl = request.getOriginalUrl();
 
-        Url url = Url.builder()
-            .originalUrl(originalUrl)
-            .user(user)
-            .createdAt(LocalDateTime.now())
-            .expiresAt(LocalDateTime.now().plusDays(30))
-            .build();
+        // Validate expiration date
+        LocalDateTime expiresAt = request.getExpiresAt();
+        if (expiresAt == null) {
+            expiresAt = LocalDateTime.now().plusDays(30);
+        } else {
+            if (expiresAt.isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Expiration date cannot be in the past");
+            }
+            if (expiresAt.isAfter(LocalDateTime.now().plusDays(90))) {
+                throw new RuntimeException("Expiration date cannot exceed 90 days");
+            }
+        }
 
-        Url saved = urlRepository.save(url);
+        String customCode = request.getCustomCode();
+        String shortCode;
 
-        Long id = saved.getId();
-        String shortCode = Base62Encoder.encode(id);
+        if (customCode != null && !customCode.trim().isEmpty()) {
+            String trimmedCode = customCode.trim();
+            if (trimmedCode.length() < 3 || trimmedCode.length() > 30) {
+                throw new RuntimeException("Custom alias must be between 3 and 30 characters");
+            }
+            if (!trimmedCode.matches("^[a-zA-Z0-9_-]+$")) {
+                throw new RuntimeException("Custom alias can only contain letters, numbers, hyphens, and underscores");
+            }
+            if (urlRepository.existsByShortCode(trimmedCode)) {
+                throw new RuntimeException("Custom alias is already in use");
+            }
 
-        saved.setShortCode(shortCode);
+            // Reserved keywords validation
+            List<String> reserved = List.of("shorten", "urls", "api", "login", "register", "dashboard", "analytics");
+            if (reserved.contains(trimmedCode.toLowerCase())) {
+                throw new RuntimeException("Custom alias is a reserved word");
+            }
 
-        urlRepository.save(saved);
+            shortCode = trimmedCode;
+
+            Url url = Url.builder()
+                .originalUrl(originalUrl)
+                .shortCode(shortCode)
+                .user(user)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(expiresAt)
+                .build();
+
+            urlRepository.save(url);
+        } else {
+            Url url = Url.builder()
+                .originalUrl(originalUrl)
+                .user(user)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(expiresAt)
+                .build();
+
+            Url saved = urlRepository.save(url);
+
+            Long id = saved.getId();
+            shortCode = Base62Encoder.encode(id);
+
+            saved.setShortCode(shortCode);
+            urlRepository.save(saved);
+        }
+
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
-        return new UrlResponse(shortCode, originalUrl, 0, saved.isActive(), saved.isHasQrCode(), saved.getExpiresAt());
+        return new UrlResponse(shortCode, originalUrl, 0, true, false, expiresAt);
     }
 
     // Resolves a short code to its destination URL, preferring Redis before falling back to DB.
-    public String redirectUrl(String shortCode, String ipAddress, String userAgent) {
+    public String redirectUrl(String shortCode, String ipAddress, String userAgent, String referrer, String country) {
         String cacheKey = "url:" + shortCode;
         String cachedJson = redisTemplate.opsForValue().get(cacheKey);
 
@@ -132,10 +179,22 @@ public class UrlService {
             .clickedAt(LocalDateTime.now())
             .ipAddress(ipAddress)
             .userAgent(userAgent)
+            .referrer(referrer)
+            .country(country)
             .build();
 
-        clickRepository.save(click);
+        Click savedClick = clickRepository.save(click);
+
+        // Always evict analytics cache immediately so that dashboard click counts update in real-time.
+        // The background resolver will evict again once geolocation breakdowns are finalized.
         redisTemplate.delete("analytics:" + shortCode);
+
+        if (country == null) {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                resolveCountry(savedClick.getId(), ipAddress, shortCode);
+            });
+        }
+
         if (ownerUserId != null) {
             redisTemplate.delete(userUrlsCacheKey(ownerUserId));
         }
@@ -328,6 +387,39 @@ public class UrlService {
                     )
                 );
 
+            Map<String, Long> referrerBreakdown = clicks
+                .stream()
+                .map(click -> extractReferrerDomain(click.getReferrer()))
+                .collect(Collectors.groupingBy(ref -> ref, Collectors.counting()));
+
+            Map<String, Long> deviceBreakdown = clicks
+                .stream()
+                .map(click -> extractDeviceType(click.getUserAgent()))
+                .collect(Collectors.groupingBy(dev -> dev, Collectors.counting()));
+
+            Map<String, Long> countryBreakdown = clicks
+                .stream()
+                .map(click -> click.getCountry() != null ? click.getCountry() : "Unknown")
+                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
+            Map<String, Long> regionBreakdown = clicks
+                .stream()
+                .map(click -> {
+                    String region = click.getRegion() != null ? click.getRegion() : "Unknown";
+                    String country = click.getCountry() != null ? click.getCountry() : "Unknown";
+                    return region + ":" + country;
+                })
+                .collect(Collectors.groupingBy(r -> r, Collectors.counting()));
+
+            Map<String, Long> cityBreakdown = clicks
+                .stream()
+                .map(click -> {
+                    String city = click.getCity() != null ? click.getCity() : "Unknown";
+                    String country = click.getCountry() != null ? click.getCountry() : "Unknown";
+                    return city + ":" + country;
+                })
+                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
             List<ClickDetailDTO> lastClicks = clicks
                 .stream()
                 .sorted(Comparator.comparing(Click::getClickedAt).reversed())
@@ -341,6 +433,14 @@ public class UrlService {
                 )
                 .toList();
 
+            int[][] trafficHeatmap = new int[7][24];
+            for (Click click : clicks) {
+                int day = click.getClickedAt().getDayOfWeek().getValue(); // 1 = Monday, 7 = Sunday
+                int dayIndex = (day == 7) ? 0 : day; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                int hour = click.getClickedAt().getHour(); // 0 to 23
+                trafficHeatmap[dayIndex][hour]++;
+            }
+
             UrlAnalyticsResponse result = UrlAnalyticsResponse.builder()
                 .shortCode(url.getShortCode())
                 .originalUrl(url.getOriginalUrl())
@@ -349,12 +449,35 @@ public class UrlService {
                 .browserBreakdown(browserBreakdown)
                 .osBreakdown(osBreakdown)
                 .clicksByDate(clicksByDate)
+                .referrerBreakdown(referrerBreakdown)
+                .deviceBreakdown(deviceBreakdown)
+                .countryBreakdown(countryBreakdown)
+                .regionBreakdown(regionBreakdown)
+                .cityBreakdown(cityBreakdown)
+                .trafficHeatmap(trafficHeatmap)
                 .build();
             String json = objectMapper.writeValueAsString(result);
 
             redisTemplate.opsForValue().set(cacheKey, json, Duration.ofHours(24));
             return result;
         }
+    }
+
+    // Parses the referrer string to extract domain.
+    private String extractReferrerDomain(String referrer) {
+        if (referrer == null || referrer.trim().isEmpty()) {
+            return "Direct / Unknown";
+        }
+        try {
+            java.net.URI uri = new java.net.URI(referrer);
+            String host = uri.getHost();
+            if (host != null) {
+                return host.startsWith("www.") ? host.substring(4) : host;
+            }
+        } catch (Exception e) {
+            // Ignore parsing error
+        }
+        return referrer;
     }
 
     // Parses the browser family from the user-agent string.
@@ -373,6 +496,43 @@ public class UrlService {
             return "Unknown";
         }
         return client.os.family != null ? client.os.family : "Unknown";
+    }
+
+    // Classifies the device type (Desktop, Mobile, Tablet, Bot) from the User-Agent.
+    private String extractDeviceType(String userAgent) {
+        if (userAgent == null || userAgent.isEmpty()) {
+            return "Desktop";
+        }
+        Client client = USER_AGENT_PARSER.parse(userAgent);
+        if (client == null) {
+            return "Desktop";
+        }
+
+        String os = client.os != null && client.os.family != null ? client.os.family : "";
+        String device = client.device != null && client.device.family != null ? client.device.family : "";
+
+        // 1. Check for bots/spiders
+        if ("Spider".equalsIgnoreCase(device) || userAgent.toLowerCase().contains("bot") || userAgent.toLowerCase().contains("spider")) {
+            return "Bot";
+        }
+
+        // 2. Check for Tablet
+        if (device.toLowerCase().contains("ipad") || device.toLowerCase().contains("tablet") || userAgent.toLowerCase().contains("ipad") || 
+            (userAgent.toLowerCase().contains("android") && !userAgent.toLowerCase().contains("mobile"))) {
+            return "Tablet";
+        }
+
+        // 3. Check for Mobile
+        if (device.toLowerCase().contains("iphone") || device.toLowerCase().contains("ipod") || 
+            device.toLowerCase().contains("mobile") || device.toLowerCase().contains("phone") ||
+            os.toLowerCase().contains("android") || os.toLowerCase().contains("ios") || 
+            os.toLowerCase().contains("windows phone") || userAgent.toLowerCase().contains("mobile") ||
+            "Generic Smartphone".equalsIgnoreCase(device) || "Generic Feature Phone".equalsIgnoreCase(device)) {
+            return "Mobile";
+        }
+
+        // 4. Fallback to Desktop
+        return "Desktop";
     }
 
     // Checks if a shortcode exists, is active, and is not expired (does not register a click).
@@ -431,5 +591,55 @@ public class UrlService {
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
         return false;
+    }
+
+    // Resolves country, region, and city from IP in the background.
+    private void resolveCountry(Long clickId, String ipAddress, String shortCode) {
+        String country = "Unknown";
+        String region = "Unknown";
+        String city = "Unknown";
+        try {
+            java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+            String url = "http://ip-api.com/json/?fields=status,country,regionName,city";
+            if (ipAddress != null && !ipAddress.isEmpty() && !isLocalIp(ipAddress)) {
+                url = "http://ip-api.com/json/" + ipAddress + "?fields=status,country,regionName,city";
+            }
+            java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(url))
+                .timeout(java.time.Duration.ofSeconds(3))
+                .GET()
+                .build();
+            java.net.http.HttpResponse<String> response = httpClient.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                tools.jackson.databind.JsonNode root = objectMapper.readTree(response.body());
+                if ("success".equals(root.path("status").asText())) {
+                    country = root.path("country").asText("Unknown");
+                    region = root.path("regionName").asText("Unknown");
+                    city = root.path("city").asText("Unknown");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            Click click = clickRepository.findById(clickId).orElse(null);
+            if (click != null) {
+                click.setCountry(country);
+                click.setRegion(region);
+                click.setCity(city);
+                clickRepository.save(click);
+                redisTemplate.delete("analytics:" + shortCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isLocalIp(String ip) {
+        return ip == null || ip.equals("127.0.0.1") || ip.equals("0:0:0:0:0:0:0:1") || 
+               ip.equals("localhost") || ip.startsWith("192.168.") || ip.startsWith("10.") ||
+               ip.startsWith("172.16.") || ip.startsWith("172.17.") || ip.startsWith("172.18.") ||
+               ip.startsWith("172.19.") || ip.startsWith("172.2") || ip.startsWith("172.3");
     }
 }

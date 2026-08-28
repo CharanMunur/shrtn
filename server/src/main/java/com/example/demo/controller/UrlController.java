@@ -62,7 +62,23 @@ public class UrlController {
         }
 
         String userAgent = request.getHeader("User-Agent");
-        String originalUrl = urlService.redirectUrl(shortCode, ipAddress, userAgent);
+        String referrer = request.getHeader("Referer");
+
+        // Attempt to extract country from proxy headers (Cloudflare, Vercel, Render)
+        String countryCode = request.getHeader("CF-IPCountry");
+        if (countryCode == null || countryCode.isEmpty()) {
+            countryCode = request.getHeader("X-Vercel-IP-Country");
+        }
+        if (countryCode == null || countryCode.isEmpty()) {
+            countryCode = request.getHeader("X-Geo-Country");
+        }
+
+        String countryName = null;
+        if (countryCode != null && !countryCode.isEmpty() && !countryCode.equalsIgnoreCase("XX")) {
+            countryName = getCountryNameFromCode(countryCode);
+        }
+
+        String originalUrl = urlService.redirectUrl(shortCode, ipAddress, userAgent, referrer, countryName);
 
         // Prepend protocol if missing to prevent relative redirection loops in the browser
         if (!originalUrl.startsWith("http://") && !originalUrl.startsWith("https://")) {
@@ -123,5 +139,17 @@ public class UrlController {
         return ResponseEntity.status(status).body(
             new MessageResponse(msg != null ? msg : "Internal server error")
         );
+    }
+
+    private String getCountryNameFromCode(String countryCode) {
+        if (countryCode == null || countryCode.isEmpty()) {
+            return "Unknown";
+        }
+        try {
+            java.util.Locale locale = new java.util.Locale("", countryCode);
+            return locale.getDisplayCountry(java.util.Locale.ENGLISH);
+        } catch (Exception e) {
+            return countryCode;
+        }
     }
 }

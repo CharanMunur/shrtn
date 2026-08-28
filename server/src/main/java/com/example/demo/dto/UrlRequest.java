@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,4 +8,6 @@ import lombok.Setter;
 @Setter
 public class UrlRequest {
     private String originalUrl;
+    private String customCode;
+    private LocalDateTime expiresAt;
 }

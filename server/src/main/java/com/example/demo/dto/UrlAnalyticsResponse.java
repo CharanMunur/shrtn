@@ -22,4 +22,10 @@ public class UrlAnalyticsResponse {
     private Map<String, Long> browserBreakdown;
     private Map<String, Long> osBreakdown;
     private Map<String, Long> clicksByDate;
+    private Map<String, Long> referrerBreakdown;
+    private Map<String, Long> deviceBreakdown;
+    private Map<String, Long> countryBreakdown;
+    private Map<String, Long> regionBreakdown;
+    private Map<String, Long> cityBreakdown;
+    private int[][] trafficHeatmap;
 }

@@ -42,4 +42,16 @@ public class Click {
 
     @Column(length = 512)
     private String userAgent;
+
+    @Column(length = 255)
+    private String referrer;
+
+    @Column(length = 100)
+    private String country;
+
+    @Column(length = 100)
+    private String region;
+
+    @Column(length = 100)
+    private String city;
 }
