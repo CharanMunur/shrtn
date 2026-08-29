@@ -4,7 +4,7 @@ import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { useAuth } from "@/providers/auth-provider"
 import { ApiError } from "@/lib/api"
 import { ModeToggle } from "@/features/theme/mode-toggle"
-import { Card, CardContent } from "@/components/ui/card"
+
 
 type Tab = "login" | "register" | "verify" | "forgot" | "reset"
 
