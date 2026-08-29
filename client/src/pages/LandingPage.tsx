@@ -2,16 +2,16 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import type { Variants } from "framer-motion"
+import { Button } from "@/components/ui/button"
 import {
   Link2,
-  BarChart3,
   ArrowRight,
   ChevronDown,
-  QrCode,
+  Grip,
   Menu,
   Zap,
   Globe2,
-  Map
+  Map,
 } from "lucide-react"
 
 const containerVariants: Variants = {
@@ -60,9 +60,73 @@ const FAQ_ITEMS = [
   }
 ]
 
+type FeatureTabKey = "redirects" | "analytics" | "qr" | "privacy"
+
+const FEATURE_TABS: Array<{
+  key: FeatureTabKey
+  title: string
+  heading: string
+  body: string
+  highlights: string[]
+}> = [
+  {
+    key: "redirects",
+    title: "Fast, controlled short links",
+    heading: "Short links built for daily use",
+    body: "Create clean short links with generated Base62 codes or your own custom alias. Every link includes an expiry window, ownership checks, active or inactive status, and a dashboard record with its destination and click count.",
+    highlights: [
+      "Custom aliases",
+      "Expiry controls",
+      "Active status toggles",
+    ],
+  },
+  {
+    key: "analytics",
+    title: "Detailed click analytics",
+    heading: "Actionable Analytics",
+    body: "Understand how each link performs with analytics across total clicks, recent visits, referrers, browsers, operating systems, devices, countries, regions, cities, and activity by date and hour.",
+    highlights: [
+      "Device, OS, browser",
+      "Country, region, city",
+      "Date and hour patterns",
+    ],
+  },
+  {
+    key: "qr",
+    title: "QR code generation",
+    heading: "Instant QR Codes",
+    body: "Turn any active short link into a QR code when you need an offline entry point. QR access is tied to the same destination and can be enabled or revoked from the link record.",
+    highlights: [
+      "300px PNG output",
+      "Enable or revoke",
+      "Same tracked link",
+    ],
+  },
+  {
+    key: "privacy",
+    title: "Secure accounts and ownership",
+    heading: "Account-first link management",
+    body: "Shrtn keeps link operations tied to verified accounts. Registration uses email OTP verification, sessions use JWT authentication, and protected actions check ownership before links, analytics, QR state, or password changes are modified.",
+    highlights: [
+      "Email OTP verification",
+      "JWT sessions",
+      "Owner-only actions",
+    ],
+  },
+]
+
 export function LandingPage() {
   const navigate = useNavigate()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [activeFeatureTab, setActiveFeatureTab] =
+    useState<FeatureTabKey>("analytics")
+  const activeFeatureTabData =
+    FEATURE_TABS.find((tab) => tab.key === activeFeatureTab) ?? FEATURE_TABS[0]
+  const activeFeatureTabIndex = FEATURE_TABS.findIndex(
+    (tab) => tab.key === activeFeatureTab
+  )
+  const nextFeatureTab =
+    FEATURE_TABS[(activeFeatureTabIndex + 1) % FEATURE_TABS.length]
   
   // Ensure the page starts at the top
   useEffect(() => {
@@ -90,13 +154,13 @@ export function LandingPage() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3 justify-self-end">
-          <button onClick={() => navigate("/signin")} className="px-6 py-3 text-[14px] font-medium rounded-xl bg-[#F5F5F5] border border-[#E0E0E0] hover:bg-[#EBEBEB] transition-colors cursor-pointer">
+          <Button className="px-[14px]" variant="outline" size="lg" onClick={() => navigate("/signin")}>
             Sign in
-          </button>
-          <button onClick={() => navigate("/signup")} className="px-6 py-3 text-[14px] font-medium rounded-xl bg-[#1E1E1E] text-white shadow-sm hover:scale-[1.02] transition-transform flex items-center gap-1.5 cursor-pointer">
+          </Button>
+          <Button className="px-[14px]" size="lg" onClick={() => navigate("/signup")}>
             Get Started
             <ArrowRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         <button className="md:hidden p-2 rounded-xl hover:bg-[#F5F5F5] justify-self-end text-[#1E1E1E]">
@@ -136,125 +200,111 @@ export function LandingPage() {
               variants={itemVariants}
               className="mt-7 text-[16px] md:text-[19px] text-[#1E1E1E]/60 max-w-xl mx-auto leading-relaxed"
             >
-              Transform long, clunky URLs into short, shareable links. Track click counts, device types, and operating systems from a clean, distraction-free dashboard.
+              Create managed short links with custom aliases, expiry controls, QR support, and a dashboard that explains where your traffic comes from.
             </motion.p>
             
             <motion.div 
               variants={itemVariants}
               className="mt-10 flex items-center justify-center gap-4 flex-wrap"
             >
-              <button onClick={() => navigate("/signup")} className="px-8 py-4 text-[15px] font-medium rounded-xl bg-[#1E1E1E] text-white shadow-lg shadow-black/10 hover:scale-[1.02] transition-transform flex items-center gap-2 cursor-pointer">
+              <Button className="px-[14px]" size="lg" onClick={() => navigate("/signup")}>
                 Start for free
                 <ArrowRight className="h-4 w-4" />
-              </button>
-              <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="px-8 py-4 text-[15px] font-medium rounded-xl bg-white border border-[#E0E0E0] text-[#1E1E1E] shadow-sm hover:bg-[#F5F5F5] transition-colors cursor-pointer">
+              </Button>
+              <Button className="px-[14px]" variant="outline" size="lg" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>
                 See how it works
-              </button>
+              </Button>
             </motion.div>
           </motion.div>
         </section>
 
-        {/* Marquee Section */}
-        <section className="pb-24 md:pb-32 bg-[#FAFAFA]">
+        {/* Features / Tabs Section */}
+        <section id="features" className="py-14 md:py-16 bg-[#FAFAFA]">
           <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-            <div className="grid md:grid-cols-[260px_1fr] gap-12 md:gap-16 items-center">
-              <div>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                  <circle cx="4" cy="4" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
-                  <circle cx="14" cy="4" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
-                  <circle cx="14" cy="14" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
-                  <circle cx="4" cy="14" r="2.2" fill="#1E1E1E" opacity="0.18"></circle>
-                </svg>
-                <p className="mt-5 text-[13.5px] text-[#1E1E1E]/60 leading-snug">
-                  Powered by modern<br/>web technologies
-                </p>
-              </div>
-              <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
-                <div className="flex items-center w-max gap-x-24 animate-[marquee_30s_linear_infinite]">
-                  {/* Fake tech logos to represent stack */}
-                  {['React', 'Spring Boot', 'PostgreSQL', 'Redis', 'Vercel', 'Render'].map((tech, i) => (
-                    <div key={i} className="flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity font-bold text-2xl tracking-tighter">
-                      {tech}
-                    </div>
-                  ))}
-                  {/* Duplicate for infinite effect */}
-                  {['React', 'Spring Boot', 'PostgreSQL', 'Redis', 'Vercel', 'Render'].map((tech, i) => (
-                    <div key={`dup-${i}`} className="flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity font-bold text-2xl tracking-tighter">
-                      {tech}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features / Thesis Section */}
-        <section id="features" className="py-20 bg-[#FAFAFA]">
-          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-            <div className="relative bg-[#F5F5F5] rounded-[32px] border border-[#E0E0E0] p-8 md:p-12 lg:p-16 overflow-hidden">
-              <div className="grid lg:grid-cols-[1fr_1.05fr] gap-12 lg:gap-16 min-h-[480px]">
-                
+            <div className="rounded-[28px] border border-[#E0E0E0] bg-[#F5F5F5] p-6 md:p-8 lg:p-10 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.08)]">
+              <div className="grid lg:grid-cols-[0.88fr_1.12fr] gap-10 lg:gap-14 items-center">
                 <div className="flex flex-col">
-                  <h2 className="font-serif text-[36px] leading-[1.1] text-[#1E1E1E]">Shrtn: Our Thesis</h2>
-                  <p className="mt-5 text-[15px] text-[#1E1E1E]/65 max-w-[420px] leading-relaxed">
-                    We built a URL shortener focused on speed, simplicity, and actionable data. No bloated dashboards or complex pricing tiers. Just clean links and deep insights into your audience.
-                  </p>
-                  <button onClick={() => navigate("/signup")} className="mt-8 w-fit px-5 py-2.5 text-[13px] font-medium rounded-xl bg-white border border-[#E0E0E0] hover:bg-[#EBEBEB] transition-colors flex items-center gap-1.5 cursor-pointer">
-                    Start shortening <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                  
-                  <ul className="mt-auto pt-16 space-y-5">
-                    {['Ultra-fast redirects via Redis', 'Detailed click analytics', 'QR code generation', 'Privacy-focused tracking'].map((item, i) => (
-                      <li key={i} className="flex items-center gap-4 text-left group">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
-                          <circle cx="4" cy="4" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
-                          <circle cx="14" cy="4" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
-                          <circle cx="4" cy="14" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
-                          <circle cx="14" cy="14" r="2" fill="#1E1E1E" opacity={i === 0 ? "1" : "0.18"}></circle>
-                        </svg>
-                        <span className={`text-[14.5px] transition-colors ${i === 0 ? "text-[#1E1E1E] font-medium" : "text-[#1E1E1E]/40 group-hover:text-[#1E1E1E]/70"}`}>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div>
+                    <h2 className="font-serif text-[36px] md:text-[48px] leading-[1.05] tracking-tight text-[#1E1E1E] mt-3">
+                      Our features
+                    </h2>
+                  </div>
+
+                  <div className="mt-8 flex flex-col gap-3">
+                  {FEATURE_TABS.map((tab) => {
+                    const isActive = activeFeatureTab === tab.key
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveFeatureTab(tab.key)}
+                        className={`inline-flex items-center gap-2 w-fit text-left text-[15px] leading-snug transition-colors ${
+                          isActive
+                            ? "text-[#1E1E1E] font-medium"
+                            : "text-[#1E1E1E]/45 hover:text-[#1E1E1E]/70"
+                        }`}
+                      >
+                        <Grip className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                        {tab.title}
+                      </button>
+                    )
+                  })}
                 </div>
 
-                <div className="relative min-h-[500px] mt-8 lg:mt-0">
-                  <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-0 right-0 w-[85%] max-w-[420px] bg-white border border-[#E0E0E0] rounded-[28px] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.08)] overflow-hidden z-10"
-                  >
-                    <div className="p-8 pb-10">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#1E1E1E] mb-6">
-                        <BarChart3 className="h-6 w-6" />
+                <Button
+                  className="mt-6 w-fit px-[14px]"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate("/signup")}
+                >
+                  Start shortening <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+                </div>
+
+                <div className="relative min-h-[500px] lg:min-h-[540px] mt-6 lg:mt-0">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeFeatureTabData.key}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="relative h-full"
+                    >
+                      <div className="absolute right-6 top-0 hidden md:block w-[78%] rotate-[4deg] rounded-[28px] border border-[#E0E0E0] bg-white/55 p-6 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.16)] opacity-70">
+                        <p className="text-[13px] font-medium text-[#1E1E1E]/35">
+                          {nextFeatureTab.title}
+                        </p>
+                        <h3 className="mt-4 font-serif text-[22px] leading-snug text-[#1E1E1E]/30">
+                          {nextFeatureTab.heading}
+                        </h3>
+                        <p className="mt-4 text-[14px] leading-relaxed text-[#1E1E1E]/25 max-w-[420px]">
+                          {nextFeatureTab.body}
+                        </p>
                       </div>
-                      <h3 className="font-serif text-[24px] leading-snug text-[#1E1E1E]">Actionable Analytics</h3>
-                      <p className="mt-4 text-[14px] text-[#1E1E1E]/60 leading-relaxed">
-                        Track every click in real-time. Our dashboard breaks down visitor data by device type, operating system, browser, and chronological timeline so you know exactly who is engaging with your content.
-                      </p>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-40 left-0 w-[85%] max-w-[400px] bg-white border border-[#E0E0E0] rounded-[28px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.12)] overflow-hidden z-20"
-                  >
-                    <div className="p-8 pb-10">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1E1E1E] text-white mb-6">
-                        <QrCode className="h-6 w-6" />
+
+                      <div className="relative z-10 mt-12 md:mt-16 w-full rounded-[28px] border border-[#E0E0E0] bg-white p-6 md:p-8 shadow-[0_18px_60px_-28px_rgba(0,0,0,0.16)]">
+                        <h3 className="font-serif text-[26px] md:text-[34px] leading-tight text-[#1E1E1E]">
+                          {activeFeatureTabData.heading}
+                        </h3>
+                        <p className="mt-5 max-w-[620px] text-[16px] md:text-[17px] leading-[1.8] text-[#1E1E1E]/62">
+                          {activeFeatureTabData.body}
+                        </p>
+                        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                          {activeFeatureTabData.highlights.map((item) => (
+                            <div
+                              key={item}
+                              className="rounded-lg border border-[#E0E0E0] bg-[#FAFAFA] px-2.5 py-2"
+                            >
+                              <p className="text-[13px] font-medium text-[#1E1E1E]/72 leading-tight">
+                                {item}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <h3 className="font-serif text-[24px] leading-snug text-[#1E1E1E]">Instant QR Codes</h3>
-                      <p className="mt-4 text-[14px] text-[#1E1E1E]/60 leading-relaxed">
-                        Bridge the gap between offline and online. Every shortened link automatically generates a scannable QR code that you can download in high-resolution for print materials.
-                      </p>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
@@ -274,15 +324,15 @@ export function LandingPage() {
                 </h2>
               </div>
               <p className="text-[15px] text-[#1E1E1E]/60 leading-relaxed max-w-md md:justify-self-end">
-                Our redirection engine relies on a Redis cache layer for fast lookups, ensuring your visitors get where they need to go quickly and reliably.
+                Shrtn uses Redis for redirect lookups, PostgreSQL for durable link and click history, and focused cache invalidation so dashboard data stays current.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { label: "Caching", title: "Redis Lookups", desc: "Redirects are served directly from memory, avoiding database queries on the hot path.", highlight: "O(1)", sub: "access time" },
-                { label: "Encoding", title: "Base62 Codes", desc: "Database IDs are encoded to generate compact, collision-free short URLs.", highlight: "6", sub: "character length" },
-                { label: "Security", title: "OTP Authentication", desc: "Stateless JWT sessions and email verification via Resend secure your account.", highlight: "JWT", sub: "stateless auth" }
+                { label: "Caching", title: "Redirect Cache", desc: "Frequently used short codes are resolved from Redis before falling back to the database.", highlight: "O(1)", sub: "access time" },
+                { label: "Encoding", title: "Base62 Codes", desc: "Generated links stay compact, while custom aliases are validated for length, uniqueness, and reserved words.", highlight: "6", sub: "character length" },
+                { label: "Freshness", title: "Cache Invalidation", desc: "URL lists and analytics are refreshed after clicks, edits, QR changes, and deletes.", highlight: "TTL", sub: "managed cache" }
               ].map((card, i) => (
                 <motion.article 
                   key={i}
@@ -297,10 +347,16 @@ export function LandingPage() {
                     <h3 className="font-serif mt-3 text-[22px] leading-snug text-[#1E1E1E]">{card.title}</h3>
                     <p className="text-[14px] text-[#1E1E1E]/60 leading-relaxed mt-3">{card.desc}</p>
                   </div>
-                  <div className="mx-5 mb-5 mt-auto rounded-2xl p-6 flex items-center justify-center h-[240px] bg-[#F5F5F5] border border-[#E0E0E0]">
+                  <div className={`mx-5 mb-5 mt-auto rounded-2xl p-6 flex items-center justify-center h-[240px] border ${
+                    card.highlight === "6"
+                      ? "bg-[#181818] border-[#181818] text-white"
+                      : "bg-[#F5F5F5] border-[#E0E0E0] text-[#1E1E1E]"
+                  }`}>
                     <div className="text-center">
-                      <p className="font-serif text-[48px] leading-none tracking-tight text-[#1E1E1E]">{card.highlight}</p>
-                      <p className="text-[13px] font-medium text-[#1E1E1E]/50 mt-3 uppercase tracking-widest">{card.sub}</p>
+                      <p className="font-serif text-[48px] leading-none tracking-tight">{card.highlight}</p>
+                      <p className={`text-[13px] font-medium mt-3 uppercase tracking-widest ${
+                        card.highlight === "6" ? "text-white/50" : "text-[#1E1E1E]/50"
+                      }`}>{card.sub}</p>
                     </div>
                   </div>
                 </motion.article>
@@ -309,20 +365,20 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* What's New / Next-Gen Analytics Section */}
+        {/* Analytics Intelligence Section */}
         <section className="py-24 bg-[#FAFAFA] border-t border-[#E0E0E0]/65">
           <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
             <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-end mb-16">
               <div>
                 <span className="inline-flex items-center gap-2 bg-[#1E1E1E] text-white rounded-xl px-3 py-1 text-[12px] font-medium">
-                  What's New in v2
+                  Analytics
                 </span>
                 <h2 className="font-serif text-[36px] md:text-[48px] leading-[1.05] tracking-tight mt-5 text-[#1E1E1E]">
-                  Next-Gen Visual Analytics
+                  Know Your Audience
                 </h2>
               </div>
               <p className="text-[15px] text-[#1E1E1E]/60 leading-relaxed max-w-md md:justify-self-end">
-                We've upgraded our reporting engine with interactive vector world maps, regional details, and zero-lag real-time cache pipelines.
+                Each click becomes a structured signal: when it happened, where it came from, and what environment opened it.
               </p>
             </div>
 
@@ -330,18 +386,18 @@ export function LandingPage() {
               {[
                 {
                   icon: <Globe2 className="h-5 w-5" />,
-                  title: "Interactive World Map",
-                  desc: "Visualize visitor distributions globally. Hover over country paths to view exact click counts in custom popover tooltips—running entirely offline and vector-native."
+                  title: "Traffic Sources",
+                  desc: "See which referrers send visitors to each short link, then compare that context with recent click history and daily activity patterns."
                 },
                 {
                   icon: <Map className="h-5 w-5" />,
-                  title: "Region & City Flag Breakdowns",
-                  desc: "Drill deep into visitor details. Track states, regions, and cities next to dynamic country flag icons generated inline based on geographic parsing."
+                  title: "Visitor Environment",
+                  desc: "Break down engagement by browser, operating system, and device type, including desktop, mobile, tablet, and bot traffic."
                 },
                 {
                   icon: <Zap className="h-5 w-5" />,
-                  title: "Zero-Lag Cache Eviction",
-                  desc: "Never wait for click counts. Redis cache pipelines evict analytics indexes instantly on redirect, showing new clicks in real-time while background geocoding finishes."
+                  title: "Geographic Detail",
+                  desc: "Understand where engagement is coming from with country, region, and city-level reporting powered by background IP enrichment."
                 }
               ].map((item, i) => (
                 <motion.article 
@@ -368,8 +424,7 @@ export function LandingPage() {
         {/* Dashboard Preview Section */}
         <section className="py-24 bg-[#FAFAFA]">
           <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-            <div className="relative rounded-[32px] overflow-hidden bg-[#1E1E1E] text-white">
-              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #ffffff 0%, transparent 70%)' }}></div>
+            <div className="relative rounded-[32px] overflow-hidden bg-[#181818] text-white">
               <div className="relative grid lg:grid-cols-[1fr_1.2fr] gap-12 p-10 md:p-16 items-center">
                 <div>
                   <p className="inline-flex items-center gap-2 text-[13px] text-white/70 font-medium">
@@ -380,11 +435,11 @@ export function LandingPage() {
                     Total control over<br/>your links.
                   </h2>
                   <p className="mt-6 text-[16px] text-white/60 max-w-md leading-relaxed">
-                    Toggle links on or off instantly. View rich analytics, generate QR codes, and manage your account from a minimalist, distraction-free interface.
+                    Manage active links, review destinations, monitor click totals, generate or revoke QR codes, and disable links without deleting history.
                   </p>
-                  <button onClick={() => navigate("/signup")} className="mt-10 px-8 py-4 bg-white text-[#1E1E1E] rounded-xl text-[14px] font-medium hover:bg-white/90 transition-colors flex items-center gap-2 cursor-pointer">
+                  <Button className="mt-10 px-[14px]" variant="outline" size="lg" onClick={() => navigate("/signup")}>
                     Create your account <ArrowRight className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
                 
                 <motion.div 
@@ -475,9 +530,9 @@ export function LandingPage() {
             <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.1] tracking-tight text-[#1E1E1E]">
               Ready to simplify<br/>your links?
             </h2>
-            <button onClick={() => navigate("/signup")} className="mt-10 px-8 py-4 bg-[#1E1E1E] text-white rounded-xl text-[15px] font-medium shadow-xl hover:scale-[1.02] transition-transform inline-flex items-center gap-2 cursor-pointer">
+            <Button className="mt-10 px-[14px]" size="lg" onClick={() => navigate("/signup")}>
               Get Started Now <ArrowRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </section>
 
@@ -520,16 +575,6 @@ export function LandingPage() {
         </div>
       </footer>
 
-      {/* Global CSS for the Marquee Animation added locally since we are replacing the global styles approach */}
-      <style>{`
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-[marquee_30s_linear_infinite] {
-          animation: marquee 30s linear infinite;
-        }
-      `}</style>
     </div>
   )
 }
