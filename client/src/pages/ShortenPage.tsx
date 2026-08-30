@@ -141,7 +141,7 @@ export function ShortenPage() {
 
       {/* At limit banner */}
       {atLimit && (
-        <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3">
+        <div className="flex items-start gap-3 rounded-sm border border-destructive/20 bg-destructive/8 px-4 py-3">
           <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-destructive">Link limit reached</p>
@@ -155,7 +155,7 @@ export function ShortenPage() {
 
       {/* Near limit banner */}
       {nearLimit && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3">
+        <div className="flex items-start gap-3 rounded-sm border border-amber-500/20 bg-amber-500/8 px-4 py-3">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-sm text-muted-foreground">
             You're approaching the {URL_LIMIT}-link limit.{" "}
@@ -165,7 +165,7 @@ export function ShortenPage() {
       )}
 
       {/* Form card */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-sm border border-border bg-card p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="long-url" className="text-sm font-medium">
@@ -180,7 +180,7 @@ export function ShortenPage() {
                 value={longUrl}
                 onChange={(e) => setLongUrl(e.target.value)}
                 disabled={isLoading || atLimit}
-                className="w-full rounded-md border border-input bg-background pl-10 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-sm border border-input bg-background pl-10 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ export function ShortenPage() {
                 value={customCode}
                 onChange={(e) => setCustomCode(e.target.value)}
                 disabled={isLoading || atLimit}
-                className="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-sm border border-input bg-background px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -210,7 +210,7 @@ export function ShortenPage() {
                 value={expiryOption}
                 onChange={(e) => setExpiryOption(e.target.value as any)}
                 disabled={isLoading || atLimit}
-                className="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full rounded-sm border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <option value="30">30 Days (Default)</option>
                 <option value="1">1 Day</option>
@@ -221,7 +221,7 @@ export function ShortenPage() {
           </div>
 
           {error && (
-            <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-sm bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -229,7 +229,7 @@ export function ShortenPage() {
           <button
             type="submit"
             disabled={isLoading || atLimit}
-            className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full rounded-sm bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
@@ -248,19 +248,19 @@ export function ShortenPage() {
 
       {/* Result */}
       {result && (
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="rounded-sm border border-border bg-card p-6 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle2 className="h-5 w-5 text-green-500" />
             <span className="font-semibold">Your short link is ready!</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 rounded-md border border-border bg-muted px-3 py-2.5 text-sm font-mono text-foreground truncate">
+            <div className="flex-1 rounded-sm border border-border bg-muted px-3 py-2.5 text-sm font-mono text-foreground truncate">
               {result.shortUrl}
             </div>
             <button
               type="button"
               onClick={handleCopy}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors shrink-0"
+              className="flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors shrink-0"
             >
               {copied ? (
                 <>
@@ -280,7 +280,7 @@ export function ShortenPage() {
                 setQrCodeUrl(result.shortUrl)
                 setQrCodeCode(result.shortCode)
               }}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors shrink-0 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors shrink-0 cursor-pointer"
             >
               <QrCode className="h-4 w-4" />
               QR Code
@@ -289,7 +289,7 @@ export function ShortenPage() {
               href={result.shortUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors shrink-0"
+              className="flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors shrink-0"
             >
               <ExternalLink className="h-4 w-4" />
               Open

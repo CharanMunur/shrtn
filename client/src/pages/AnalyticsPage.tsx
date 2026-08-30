@@ -176,7 +176,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
               id="url-select"
               value={selectedCode}
               onChange={(e) => navigate(`/dashboard/analytics/${e.target.value}`)}
-              className="appearance-none rounded-lg border border-border bg-card px-4 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+              className="appearance-none rounded-sm border border-border bg-card px-4 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
             >
               {urls.map((u) => {
                 return (
@@ -192,7 +192,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-sm bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -207,9 +207,9 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Link info card */}
-          <div className="rounded-xl border border-border bg-card px-5 py-4 overflow-hidden">
+          <div className="rounded-sm border border-border bg-card px-5 py-4 overflow-hidden">
             <div className="flex items-start gap-3 w-full min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary">
                 <Link2 className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -253,8 +253,8 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             />
           </div>
 
-          {/* Clicks over time chart */}
-          <div className="rounded-xl border border-border bg-card p-5">
+          {/* Clicks over time chart (Full Width) */}
+          <div className="rounded-sm border border-border/60 bg-card p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h3 className="font-semibold text-base">Clicks traffic</h3>
@@ -264,10 +264,10 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
               </div>
 
               {/* Time range selector */}
-              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg self-start">
+              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-sm self-start">
                 <button
                   onClick={() => setTimeRange("7d")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                  className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
                     timeRange === "7d"
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -277,7 +277,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                 </button>
                 <button
                   onClick={() => setTimeRange("30d")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                  className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
                     timeRange === "30d"
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -287,7 +287,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                 </button>
                 <button
                   onClick={() => setTimeRange("all")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                  className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
                     timeRange === "all"
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -324,7 +324,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   <Bar
                     dataKey="clicks"
                     fill="var(--color-clicks)"
-                    radius={[4, 4, 0, 0]}
+                    radius={[2, 2, 0, 0]}
                     maxBarSize={40}
                   />
                 </BarChart>
@@ -332,23 +332,10 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             </div>
           </div>
 
-          {/* World Map Geographic Distribution */}
-          <div className="rounded-xl border border-border bg-card p-5 mb-6 flex flex-col">
-            <div className="px-1 pt-1 pb-3 shrink-0">
-              <h3 className="text-base font-bold text-foreground leading-none">Geographic Distribution</h3>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Visitor click densities visualized across country boundaries.
-              </p>
-            </div>
-            <div className="flex-1 min-h-[300px] bg-muted/5 rounded border border-border/40 overflow-hidden">
-              <WorldMap countryBreakdown={analytics ? analytics.countryBreakdown : {}} />
-            </div>
-          </div>
-
-          {/* Browser, OS, Devices, Countries, and Traffic Sources breakdown — Umami style */}
+          {/* Browser, OS, Devices, Countries, and Location breakdowns (Side-by-Side) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Environment Panel */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col h-[424px]">
+            <div className="rounded-sm border border-border/60 bg-card overflow-hidden flex flex-col h-[424px]">
               {/* Normal Casing Header */}
               <div className="px-5 pt-5 pb-3 shrink-0">
                 <h3 className="text-base font-bold text-foreground leading-none">Environment</h3>
@@ -424,7 +411,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             </div>
 
             {/* Location Panel */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col h-[424px]">
+            <div className="rounded-sm border border-border/60 bg-card overflow-hidden flex flex-col h-[424px]">
               {/* Normal Casing Header */}
               <div className="px-5 pt-5 pb-3 shrink-0">
                 <h3 className="text-base font-bold text-foreground leading-none">Location</h3>
@@ -500,46 +487,64 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             </div>
           </div>
 
-          {/* Traffic Activity Heatmap & Recent Clicks */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TrafficHeatmap heatmap={analytics.trafficHeatmap} />
-
-            {/* Recent Clicks Card */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
-              {/* Normal Casing Header */}
-              <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60">
-                <h3 className="text-base font-bold text-foreground leading-none">Recent Clicks</h3>
+          {/* Row 3: Geographic Map & Traffic Activity Heatmap (Side-by-Side) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* World Map Geographic Distribution */}
+            <div className="lg:col-span-2 rounded-sm border border-border/60 bg-card p-5 flex flex-col gap-3">
+              <div className="px-1 pt-1 shrink-0">
+                <h3 className="text-base font-bold text-foreground leading-none">Geographic Distribution</h3>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Last {analytics.lastClicks ? Math.min(analytics.lastClicks.length, 5) : 0} of {total.toLocaleString()} clicks registered.
+                  Visitor click densities visualized across country boundaries.
                 </p>
               </div>
-              <div className="flex-1 overflow-y-auto divide-y divide-border/60 min-h-0">
-                {!analytics.lastClicks || analytics.lastClicks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-5">
-                    <Clock className="h-6 w-6 opacity-30 mb-2" />
-                    <p className="text-sm">No recent clicks</p>
-                  </div>
-                ) : (
-                  analytics.lastClicks.slice(0, 5).map((click, i) => {
-                    const avatar = new Avatar(dicebearStyle, {
-                      "backgroundColor": [],
-                      "beardProbability": 0,
-                      "gestureProbability": 0,
-                      "glassesProbability": 0,
-                      "clothesGraphicProbability": 0,
-                      "seed": click.ipAddress || `Felix-${i}`
-                    });
-                    const svgMarkup = avatar.toString();
-                    
-                    const browserInfo = getBrowserIcon(click.userAgent);
-                    const osInfo = getOsIcon(click.userAgent);
-                    const deviceLabel = getDeviceType(click.userAgent);
+              <div className="h-[510px] bg-muted/5 rounded border border-border/40 overflow-hidden">
+                <WorldMap countryBreakdown={analytics ? analytics.countryBreakdown : {}} />
+              </div>
+            </div>
 
-                    const relTime = click.clickedAt ? formatRelativeTime(click.clickedAt) : "—";
-                    const absTime = click.clickedAt ? formatDateTime(click.clickedAt) : "—";
+            {/* Traffic Activity Heatmap */}
+            <div className="lg:col-span-1">
+              <TrafficHeatmap heatmap={analytics.trafficHeatmap} />
+            </div>
+          </div>
 
-                    return (
-                      <div key={i} className="flex items-center gap-3.5 px-5 py-4 hover:bg-muted/10 transition-colors">
+          {/* Recent Clicks Card (Full Width) */}
+          <div className="rounded-sm border border-border/60 bg-card overflow-hidden flex flex-col">
+            {/* Normal Casing Header */}
+            <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60">
+              <h3 className="text-base font-bold text-foreground leading-none">Recent Clicks</h3>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Last {analytics.lastClicks ? Math.min(analytics.lastClicks.length, 5) : 0} of {total.toLocaleString()} clicks registered.
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto divide-y divide-border/60 min-h-0">
+              {!analytics.lastClicks || analytics.lastClicks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <Clock className="h-6 w-6 opacity-30 mb-2" />
+                  <p className="text-sm">No recent clicks</p>
+                </div>
+              ) : (
+                analytics.lastClicks.slice(0, 5).map((click, i) => {
+                  const avatar = new Avatar(dicebearStyle, {
+                    "backgroundColor": [],
+                    "beardProbability": 0,
+                    "gestureProbability": 0,
+                    "glassesProbability": 0,
+                    "clothesGraphicProbability": 0,
+                    "seed": click.ipAddress || `Felix-${i}`
+                  });
+                  const svgMarkup = avatar.toString();
+                  
+                  const browserInfo = getBrowserIcon(click.userAgent);
+                  const osInfo = getOsIcon(click.userAgent);
+                  const deviceLabel = getDeviceType(click.userAgent);
+
+                  const relTime = click.clickedAt ? formatRelativeTime(click.clickedAt) : "—";
+                  const absTime = click.clickedAt ? formatDateTime(click.clickedAt) : "—";
+
+                  return (
+                    <div key={i} className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/10 transition-colors">
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
                         {/* Avatar */}
                         <div 
                           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full overflow-hidden bg-muted border border-border/60 shadow-sm"
@@ -572,7 +577,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                               {osInfo && (
                                 <img 
                                   src={osInfo.url} 
-                                  className="h-3.5 w-3.5 object-contain shrink-0 dark:invert" 
+                                  className="h-3.5 w-3.5 object-contain shrink-0" 
                                   alt={osInfo.label} 
                                 />
                               )}
@@ -587,21 +592,21 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                             </span>
                           </div>
                         </div>
-                        
-                        {/* Time details */}
-                        <div className="text-right shrink-0">
-                          <span className="text-xs font-bold text-foreground capitalize">
-                            {relTime}
-                          </span>
-                          <p className="text-[10px] text-muted-foreground/70 mt-1 font-medium">
-                            {absTime.split(",")[1]?.trim() || absTime}
-                          </p>
-                        </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
+                      
+                      {/* Time details */}
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-bold text-foreground capitalize">
+                          {relTime}
+                        </span>
+                        <p className="text-[10px] text-muted-foreground/70 mt-1 font-medium">
+                          {absTime.split(",")[1]?.trim() || absTime}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -610,7 +615,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       {/* Expanded Tab Details Modal */}
       {expandedTab !== null && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6">
-          <div className="bg-card border border-border rounded-xl w-full max-w-4xl flex flex-col h-[85vh] max-h-[85vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-card border border-border rounded-sm w-full max-w-4xl flex flex-col h-[85vh] max-h-[85vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <h3 className="font-bold text-base capitalize flex items-center gap-2">
@@ -743,7 +748,7 @@ function MetricCard({
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 flex flex-col gap-2 ${
+      className={`rounded-sm border p-4 flex flex-col gap-2 ${
         highlight
           ? "border-primary/25 bg-primary/5"
           : "border-border bg-card"
@@ -804,7 +809,11 @@ function BreakdownTable({
               const regionCityFlagCode = countryName ? getCountryCode(countryName) : null
 
               return (
-                <div key={fullName} className="group relative px-5 py-2.5 hover:bg-muted/15 transition-colors">
+                <div key={fullName} className="group relative px-5 py-2.5 hover:bg-muted/15 transition-colors overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-primary/6 transition-all duration-500 ease-out pointer-events-none"
+                    style={{ width: `${totalPct}%` }}
+                  />
                   <div className="relative flex items-center gap-3">
                     {/* Icon */}
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center">
@@ -909,7 +918,7 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
   }, [localHeatmap])
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
+    <div className="rounded-sm border border-border bg-card overflow-hidden flex flex-col">
       {/* Normal Casing Header */}
       <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60">
         <h3 className="text-base font-bold text-foreground leading-none">Traffic Activity</h3>
@@ -918,10 +927,10 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
         </p>
       </div>
       
-      <div className="flex-1 min-h-0 overflow-y-auto p-5 pt-4">
+      <div className="px-3 py-4">
         <div className="min-w-[340px] space-y-1">
           {/* Header Row */}
-          <div className="grid grid-cols-[50px_1fr] items-center gap-x-2 mb-3">
+          <div className="grid grid-cols-[50px_1fr] items-center gap-x-2 mb-2">
             <span className="text-[10px] text-muted-foreground font-mono text-right pr-2">Hour</span>
             <div className="grid grid-cols-7 text-center text-xs font-semibold text-muted-foreground">
               {DAYS.map((d) => (
@@ -935,7 +944,7 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
             const showLabel = hIdx % 2 === 0;
             return (
               <div key={hIdx} className="grid grid-cols-[50px_1fr] items-center gap-x-2">
-                <span className="text-[10px] font-mono text-muted-foreground text-right pr-2 shrink-0">
+                <span className="text-[10px] font-mono text-muted-foreground text-right pr-2 shrink-0 leading-none">
                   {showLabel ? HOURS[hIdx] : ""}
                 </span>
                 
@@ -945,14 +954,18 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
                     const intensity = count / maxClicks
                     const opacity = count > 0 ? 0.3 + intensity * 0.7 : 1
                     
+                    const tooltipXClass = dIdx <= 1 ? "left-0 -translate-x-0" : dIdx >= 5 ? "left-auto right-0 translate-x-0" : "left-1/2 -translate-x-1/2"
+                    const tooltipYClass = hIdx <= 4 ? "top-full mt-2" : "bottom-full mb-2"
+                    const tooltipAnimClass = hIdx <= 4 ? "slide-in-from-top-1" : "slide-in-from-bottom-1"
+                    
                     return (
                       <div
                         key={dIdx}
-                        className="flex items-center justify-center w-6 h-5 group relative"
+                        className="flex items-center justify-center w-5 h-4 group relative"
                       >
                         <div
-                          className={`rounded-full transition-all duration-300 ${
-                            count > 0 ? "bg-primary shadow-sm" : "bg-muted-foreground/15"
+                          className={`rounded-[2px] transition-all duration-300 ${
+                            count > 0 ? "bg-primary shadow-xs" : "bg-muted-foreground/15"
                           }`}
                           style={{
                             width: "12px",
@@ -963,7 +976,7 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
                         
                         {/* Tooltip matching Recharts ChartTooltip style */}
                         {count > 0 && (
-                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover/95 backdrop-blur-xs border border-border shadow-md rounded-lg p-2 min-w-[120px] z-50 animate-in fade-in slide-in-from-bottom-1 duration-150 pointer-events-none text-left">
+                          <div className={`absolute hidden group-hover:block bg-popover/95 backdrop-blur-xs border border-border shadow-md rounded-sm p-2 min-w-[120px] z-50 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left ${tooltipXClass} ${tooltipYClass} ${tooltipAnimClass}`}>
                             <div className="text-[10px] font-medium text-muted-foreground leading-none mb-1">
                               {DAYS[dIdx]} • {HOURS[hIdx]}
                             </div>
@@ -990,7 +1003,7 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
 function EmptyState({ urls }: { urls: UrlResponse[] }) {
   if (urls.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20 gap-3 text-center">
+      <div className="flex flex-col items-center justify-center rounded-sm border border-dashed border-border py-20 gap-3 text-center">
         <BarChart3 className="h-10 w-10 text-muted-foreground opacity-30" />
         <p className="font-medium">No links yet</p>
         <p className="text-sm text-muted-foreground">Shorten your first URL to start tracking.</p>

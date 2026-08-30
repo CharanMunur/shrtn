@@ -128,7 +128,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
         <button
           type="button"
           onClick={load}
-          className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
+          className="flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Refresh
@@ -136,13 +136,13 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-sm bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {urls.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20 gap-3 text-center">
+        <div className="flex flex-col items-center justify-center rounded-sm border border-dashed border-border py-20 gap-3 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <Link2 className="h-6 w-6 text-muted-foreground" />
           </div>
@@ -154,7 +154,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-sm border border-border bg-card overflow-hidden shadow-sm">
           {/* Table header - desktop only */}
           <div className="hidden md:grid md:grid-cols-[6rem_1fr_5rem_8.5rem_8rem_9.5rem] gap-4 px-5 py-3 border-b border-border bg-muted/40 text-sm font-semibold text-muted-foreground/80">
             <div>Code</div>
@@ -232,7 +232,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                     </div>
 
                     {/* Stats & Expiry row */}
-                    <div className="flex items-center justify-between bg-muted/30 px-3 py-2 rounded-lg text-xs">
+                    <div className="flex items-center justify-between bg-muted/30 px-3 py-2 rounded-sm text-xs">
                       {/* Clicks */}
                       <div className="flex items-center gap-1.5">
                         <span className="text-muted-foreground">Clicks:</span>
@@ -257,7 +257,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                       <button
                         type="button"
                         onClick={() => onViewAnalytics(url.shortCode)}
-                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-muted border border-border/50 cursor-pointer"
+                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-sm hover:bg-muted border border-border/50 cursor-pointer"
                       >
                         <BarChart2 className="h-3.5 w-3.5" />
                         Analytics
@@ -269,7 +269,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                           setQrCodeUrl(url.shortUrl)
                           setQrCodeCode(url.shortCode)
                         }}
-                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-muted border border-border/50 cursor-pointer"
+                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-sm hover:bg-muted border border-border/50 cursor-pointer"
                       >
                         <QrCode className="h-3.5 w-3.5" />
                         QR Code
@@ -278,7 +278,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                       <button
                         type="button"
                         onClick={() => handleCopy(url.shortUrl)}
-                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-muted border border-border/50 cursor-pointer"
+                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-sm hover:bg-muted border border-border/50 cursor-pointer"
                       >
                         {copiedUrl === url.shortUrl ? (
                           <>
@@ -296,7 +296,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteUrl(url.shortUrl)}
-                        className="flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-md border border-destructive/20 transition-colors cursor-pointer"
+                        className="flex items-center gap-1 text-xs font-medium text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-sm border border-destructive/20 transition-colors cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete
@@ -389,7 +389,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Open link"
-                      className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                      className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>
@@ -485,7 +485,7 @@ function IconBtn({
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
+      className={`flex h-8 w-8 items-center justify-center rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
     >
       {children}
     </button>

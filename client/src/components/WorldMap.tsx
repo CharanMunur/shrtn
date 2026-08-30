@@ -27,8 +27,8 @@ const SvgContainer = memo(
     const viewportRef = useRef<SVGElement | null>(null)
 
     // Zoom and pan state
-    const [zoom, setZoom] = useState(1)
-    const [pan, setPan] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1.4)
+    const [pan, setPan] = useState({ x: -254, y: -137 })
     const [isDragging, setIsDragging] = useState(false)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
     const [panStart, setPanStart] = useState({ x: 0, y: 0 })
@@ -170,9 +170,42 @@ const SvgContainer = memo(
       })
     }
 
+    const getCenteredZoomPan = () => {
+      const container = containerRef.current
+      if (!container) return { zoom: 1.4, pan: { x: -254, y: -137 } }
+
+      const rect = container.getBoundingClientRect()
+      const W_c = rect.width
+      const H_c = rect.height
+
+      // SVG viewBox: "275.86 -2.5 719.29 690"
+      const W_svg = 719.29
+      const H_svg = 690
+      const minX = 275.86
+      const minY = -2.5
+
+      // Scale factor (preserveAspectRatio xMidYMid meet)
+      const scale = Math.min(W_c / W_svg, H_c / H_svg)
+      const offsetX = (W_c - W_svg * scale) / 2
+      const offsetY = (H_c - H_svg * scale) / 2
+
+      // Center of entire world map in SVG coordinate space
+      const Cx = minX + W_svg / 2   // 635.505
+      const Cy = minY + H_svg / 2   // 342.5
+
+      const targetZoom = 1.4
+
+      // Pan so (Cx, Cy) appears at screen center (W_c/2, H_c/2)
+      const tx = (W_c / 2 - offsetX) / scale + minX - Cx * targetZoom
+      const ty = (H_c / 2 - offsetY) / scale + minY - Cy * targetZoom
+
+      return { zoom: targetZoom, pan: { x: tx, y: ty } }
+    }
+
     const resetZoomPan = () => {
-      setZoom(1)
-      setPan({ x: 0, y: 0 })
+      const centered = getCenteredZoomPan()
+      setZoom(centered.zoom)
+      setPan(centered.pan)
     }
 
     // Initialize SVG
@@ -189,7 +222,7 @@ const SvgContainer = memo(
       svgEl.setAttribute("width", "100%")
       svgEl.setAttribute("height", "100%")
       svgEl.style.display = "block"
-      svgEl.style.maxHeight = "580px"
+      svgEl.style.maxHeight = "100%"
       svgEl.style.backgroundColor = "transparent"
       svgEl.style.cursor = isDragging ? "grabbing" : "grab"
 
@@ -205,8 +238,11 @@ const SvgContainer = memo(
       }
       viewportRef.current = viewport
 
-      // Apply initial transform
-      viewport.setAttribute("transform", `translate(${panRef.current.x}, ${panRef.current.y}) scale(${zoomRef.current})`)
+      // Apply initial transform and centering
+      const centered = getCenteredZoomPan()
+      setZoom(centered.zoom)
+      setPan(centered.pan)
+      viewport.setAttribute("transform", `translate(${centered.pan.x}, ${centered.pan.y}) scale(${centered.zoom})`)
 
       const activeCountries = new Map<string, { name: string; clicks: number }>()
       if (countryBreakdown) {
@@ -331,28 +367,28 @@ const SvgContainer = memo(
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
-          className="w-full h-[580px] flex items-center justify-center bg-card py-4"
+          className="w-full h-full flex items-center justify-center bg-card py-4"
         />
 
         {/* Zoom / Pan Controls Overlay */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-1 z-10 select-none">
           <button
             onClick={zoomIn}
-            className="w-8 h-8 rounded-md border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-lg font-semibold flex items-center justify-center cursor-pointer select-none"
+            className="w-8 h-8 rounded-sm border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-lg font-semibold flex items-center justify-center cursor-pointer select-none"
             title="Zoom In"
           >
             +
           </button>
           <button
             onClick={zoomOut}
-            className="w-8 h-8 rounded-md border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-lg font-semibold flex items-center justify-center cursor-pointer select-none"
+            className="w-8 h-8 rounded-sm border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-lg font-semibold flex items-center justify-center cursor-pointer select-none"
             title="Zoom Out"
           >
             -
           </button>
           <button
             onClick={resetZoomPan}
-            className="w-8 h-8 rounded-md border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-sm flex items-center justify-center cursor-pointer select-none"
+            className="w-8 h-8 rounded-sm border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-sm flex items-center justify-center cursor-pointer select-none"
             title="Reset View"
           >
             ⟲

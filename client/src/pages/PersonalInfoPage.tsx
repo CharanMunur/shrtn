@@ -30,7 +30,7 @@ export function PersonalInfoPage() {
       </div>
 
       {/* Profile */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-sm border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
           <h2 className="text-sm font-semibold text-foreground">Profile</h2>
         </div>
@@ -63,14 +63,14 @@ export function PersonalInfoPage() {
       </div>
 
       {/* Plan */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-sm border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
           <h2 className="text-sm font-semibold text-foreground">Plan</h2>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-primary/10 text-primary">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>
@@ -112,7 +112,7 @@ export function PersonalInfoPage() {
       </div>
 
       {/* Appearance */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-sm border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
           <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
         </div>
@@ -127,7 +127,7 @@ export function PersonalInfoPage() {
               <button
                 key={t.id}
                 onClick={() => setTheme(t.id as any)}
-                className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-sm font-medium transition-all cursor-pointer ${
+                className={`flex flex-col items-center gap-2 rounded-sm border p-3 text-sm font-medium transition-all cursor-pointer ${
                   theme === t.id
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border hover:bg-muted/50 text-muted-foreground"

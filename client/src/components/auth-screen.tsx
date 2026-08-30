@@ -249,13 +249,13 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
 
             {/* Tab switcher */}
             {isSwitcherVisible && (
-              <div className="flex rounded-lg bg-muted p-1">
+              <div className="flex rounded-sm bg-muted p-1">
                 {(["login", "register"] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => switchTab(t)}
-                    className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-all cursor-pointer ${
+                    className={`flex-1 rounded-sm py-1.5 text-sm font-medium transition-all cursor-pointer ${
                       tab === t
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -284,7 +284,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading || tab === "verify" || tab === "reset"}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:bg-muted/40"
+                  className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:bg-muted/40"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                     disabled={isLoading}
-                    className="w-full text-center tracking-[0.75em] text-lg font-mono rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                    className="w-full text-center tracking-[0.75em] text-lg font-mono rounded-sm border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                   />
                 </div>
               )}
@@ -340,7 +340,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      className="w-full rounded-sm border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -375,7 +375,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      className="w-full rounded-sm border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -410,7 +410,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         disabled={isLoading}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                        className="w-full rounded-sm border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                       />
                       <button
                         type="button"
@@ -441,7 +441,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                       disabled={isLoading}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                     />
                   </div>
                 </>
@@ -449,13 +449,13 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
             </div>
 
             {infoMessage && (
-              <div className="rounded-md bg-primary/10 border border-primary/20 px-3 py-2 text-sm text-primary">
+              <div className="rounded-sm bg-primary/10 border border-primary/20 px-3 py-2 text-sm text-primary">
                 {infoMessage}
               </div>
             )}
 
             {error && (
-              <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-sm bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -463,7 +463,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border-0"
+              className="w-full rounded-sm bg-primary py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border-0"
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {tab === "login"
@@ -490,7 +490,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                   <button
                     type="button"
                     onClick={handleGoogleSignIn}
-                    className="flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                    className="flex w-full items-center justify-center gap-2 rounded-sm border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24">
                       <path
@@ -515,7 +515,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                   <button
                     type="button"
                     onClick={handleGitHubSignIn}
-                    className="flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                    className="flex w-full items-center justify-center gap-2 rounded-sm border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
                   >
                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                       <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.193 22 16.44 22 12.017 22 6.484 17.522 2 12 2z" />

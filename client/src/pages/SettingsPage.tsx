@@ -53,7 +53,7 @@ export function SettingsPage() {
       </div>
 
       {/* Account status */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-sm border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20">
           <h2 className="text-sm font-semibold text-foreground">Account</h2>
         </div>
@@ -73,7 +73,7 @@ export function SettingsPage() {
       </div>
 
       {/* Change password */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-sm border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border bg-muted/20 flex items-center gap-2">
           <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
           <h2 className="text-sm font-semibold text-foreground">Change Password</h2>
@@ -93,7 +93,7 @@ export function SettingsPage() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   disabled={isLoading}
-                  className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="w-full rounded-sm border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 />
               </div>
             </div>
@@ -111,7 +111,7 @@ export function SettingsPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   disabled={isLoading}
-                  className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="w-full rounded-sm border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 />
               </div>
             </div>
@@ -129,19 +129,19 @@ export function SettingsPage() {
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   disabled={isLoading}
-                  className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="w-full rounded-sm border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-sm bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="rounded-md bg-green-500/10 border border-green-500/20 px-3 py-2 text-sm text-green-600 flex items-center gap-1.5">
+              <div className="rounded-sm bg-green-500/10 border border-green-500/20 px-3 py-2 text-sm text-green-600 flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
                 {success}
               </div>
@@ -150,7 +150,7 @@ export function SettingsPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity cursor-pointer"
+              className="w-full rounded-sm bg-primary py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity cursor-pointer"
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Update Password

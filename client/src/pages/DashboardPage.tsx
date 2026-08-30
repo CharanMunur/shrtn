@@ -139,13 +139,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         </div>
 
         {isLoading ? (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+          <div className="rounded-sm border border-border bg-card p-6 space-y-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-10 rounded-md bg-muted animate-pulse" />
+              <div key={i} className="h-10 rounded-sm bg-muted animate-pulse" />
             ))}
           </div>
         ) : recentUrls.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border py-12 flex flex-col items-center gap-2 text-center">
+          <div className="rounded-sm border border-dashed border-border py-12 flex flex-col items-center gap-2 text-center">
             <Link2 className="h-8 w-8 text-muted-foreground opacity-40" />
             <p className="text-sm text-muted-foreground">No links yet.</p>
             <button
@@ -157,7 +157,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             </button>
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm divide-y divide-border">
+          <div className="rounded-sm border border-border bg-card overflow-hidden shadow-sm divide-y divide-border">
             {recentUrls.map((url, i) => {
               const isExpired = url.expiresAt && new Date(url.expiresAt) < new Date()
               const shortCode = url.shortCode || ""
@@ -225,7 +225,7 @@ function StatCard({
             : "text-foreground"
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-sm border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2 text-muted-foreground mb-2">
         {icon}
         <span className="text-xs font-medium">{label}</span>
@@ -251,7 +251,7 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="text-left rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-muted/40 hover:border-primary/30 transition-all group"
+      className="text-left rounded-sm border border-border bg-card p-4 shadow-sm hover:bg-muted/40 hover:border-primary/30 transition-all group"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="text-muted-foreground group-hover:text-primary transition-colors">

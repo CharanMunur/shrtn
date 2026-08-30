@@ -111,7 +111,7 @@ export function DashboardShell() {
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+            className="md:hidden p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -126,7 +126,7 @@ export function DashboardShell() {
                 key={item.id}
                 type="button"
                 onClick={() => navigateTo(item.id)}
-                className={`group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                className={`group flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
                   active
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
@@ -159,7 +159,7 @@ export function DashboardShell() {
               <DropdownMenuTrigger
                 type="button"
                 title="Menu"
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+                className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </DropdownMenuTrigger>
@@ -168,7 +168,7 @@ export function DashboardShell() {
                 side="top"
                 align="end"
                 sideOffset={8}
-                className="w-64 p-0 rounded-xl border border-border bg-popover shadow-xl overflow-hidden"
+                className="w-64 p-0 rounded-sm border border-border bg-popover shadow-xl overflow-hidden"
               >
                 {/* User info header */}
                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
@@ -185,7 +185,7 @@ export function DashboardShell() {
                     type="button"
                     onClick={() => navigateTo("settings")}
                     title="Settings"
-                    className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    className="shrink-0 p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                   >
                     <Settings className="h-3.5 w-3.5" />
                   </button>
@@ -194,7 +194,7 @@ export function DashboardShell() {
                 {/* Theme switcher */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
                   <span className="text-sm text-foreground">Theme</span>
-                  <div className="flex items-center bg-muted rounded-md p-0.5 border border-border/60">
+                  <div className="flex items-center bg-muted rounded-sm p-0.5 border border-border/60">
                     {[
                       { id: "system", icon: <Monitor className="h-3.5 w-3.5" />, label: "System" },
                       { id: "light", icon: <Sun className="h-3.5 w-3.5" />, label: "Light" },
@@ -222,7 +222,7 @@ export function DashboardShell() {
                   <button
                     type="button"
                     onClick={() => navigateTo("personal-info")}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
                   >
                     Personal Info
                     <User className="h-3.5 w-3.5 text-muted-foreground" />
@@ -236,7 +236,7 @@ export function DashboardShell() {
                   <button
                     type="button"
                     onClick={logout}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer group"
+                    className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer group"
                   >
                     Log Out
                     <LogOut className="h-3.5 w-3.5 text-muted-foreground group-hover:text-destructive transition-colors" />
@@ -254,7 +254,7 @@ export function DashboardShell() {
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+            className="md:hidden p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
           >
             <Menu className="h-4 w-4" />
           </button>
