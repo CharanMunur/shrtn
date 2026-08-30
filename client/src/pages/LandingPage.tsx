@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import type { Variants } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/providers/theme-provider"
+import { useAuth } from "@/providers/auth-provider"
 import {
   ArrowRight,
   ChevronDown,
@@ -12,6 +13,7 @@ import {
   Zap,
   Globe2,
   Map,
+  X,
 } from "lucide-react"
 
 const containerVariants: Variants = {
@@ -118,6 +120,8 @@ const FEATURE_TABS: Array<{
 export function LandingPage() {
   const navigate = useNavigate()
   const { setTheme } = useTheme()
+  const { token } = useAuth()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [activeFeatureTab, setActiveFeatureTab] =
     useState<FeatureTabKey>("analytics")
@@ -141,34 +145,110 @@ export function LandingPage() {
     <div className="bg-[#FAFAFA] text-[#1E1E1E] min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-[#1E1E1E] selection:text-white">
       
       {/* Header */}
-      <header className="fixed top-0 inset-x-0 z-50 h-[80px] backdrop-blur-xl border-b grid grid-cols-[1fr_auto_1fr] items-center px-6 lg:px-12 gap-6" style={{ backgroundColor: 'rgba(252,252,252,0.55)', borderBottomColor: 'rgba(224,224,224,0.4)' }}>
-          <img 
-            src="/logo.svg" 
-            className="h-[24px] w-auto shrink-0 select-none cursor-pointer" 
-            alt="shrtn logo" 
-            onClick={() => navigate("/")}
-          />
+      <header className="fixed top-0 inset-x-0 z-50 h-[80px] backdrop-blur-xl border-b flex items-center justify-between px-6 lg:px-12" style={{ backgroundColor: 'rgba(252,252,252,0.55)', borderBottomColor: 'rgba(224,224,224,0.4)' }}>
+        <img 
+          src="/logo.svg" 
+          className="h-[24px] w-auto shrink-0 select-none cursor-pointer" 
+          alt="shrtn logo" 
+          onClick={() => navigate("/")}
+        />
 
-        <nav className="hidden md:flex items-center gap-2 text-[14px] font-medium text-[#1E1E1E]/80 tracking-tight justify-self-center">
+        <nav className="hidden md:flex items-center gap-2 text-[14px] font-medium text-[#1E1E1E]/80 tracking-tight">
           <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="px-4 py-2.5 rounded-xl hover:bg-[#EDEDED] hover:text-[#1E1E1E] transition-colors cursor-pointer">Features</button>
           <button onClick={() => document.getElementById("analytics")?.scrollIntoView({ behavior: "smooth" })} className="px-4 py-2.5 rounded-xl hover:bg-[#EDEDED] hover:text-[#1E1E1E] transition-colors cursor-pointer">Analytics</button>
           <button onClick={() => document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" })} className="px-4 py-2.5 rounded-xl hover:bg-[#EDEDED] hover:text-[#1E1E1E] transition-colors cursor-pointer">FAQ</button>
         </nav>
 
-        <div className="hidden md:flex items-center gap-3 justify-self-end">
-          <Button className="px-[14px]" variant="outline" size="lg" onClick={() => navigate("/signin")}>
-            Sign in
-          </Button>
-          <Button className="px-[14px]" size="lg" onClick={() => navigate("/signup")}>
-            Get Started
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
+            {token ? (
+              <Button className="px-[14px]" size="lg" onClick={() => navigate("/dashboard")}>
+                Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button className="px-[14px]" variant="outline" size="lg" onClick={() => navigate("/signin")}>
+                  Sign in
+                </Button>
+                <Button className="px-[14px]" size="lg" onClick={() => navigate("/signup")}>
+                  Create Account
+                </Button>
+              </>
+            )}
+          </div>
 
-        <button className="md:hidden p-2 rounded-xl hover:bg-[#F5F5F5] justify-self-end text-[#1E1E1E]">
-          <Menu className="h-5 w-5" />
-        </button>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl hover:bg-[#F5F5F5] text-[#1E1E1E] cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </header>
+
+      {/* Mobile Menu Dropdown */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-x-0 top-[80px] z-40 border-b shadow-lg md:hidden flex flex-col p-6 gap-4"
+            style={{ backgroundColor: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', borderColor: 'rgba(224,224,224,0.4)' }}
+          >
+            <nav className="flex flex-col gap-2">
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+                }} 
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-[#EDEDED] text-[#1E1E1E] text-base font-semibold transition-colors cursor-pointer"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  document.getElementById("analytics")?.scrollIntoView({ behavior: "smooth" });
+                }} 
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-[#EDEDED] text-[#1E1E1E] text-base font-semibold transition-colors cursor-pointer"
+              >
+                Analytics
+              </button>
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" });
+                }} 
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-[#EDEDED] text-[#1E1E1E] text-base font-semibold transition-colors cursor-pointer"
+              >
+                FAQ
+              </button>
+            </nav>
+            
+            <hr className="border-border/40 my-1" />
+            
+            <div className="flex flex-col gap-3">
+              {token ? (
+                <Button className="w-full justify-center py-3" size="lg" onClick={() => { setIsMobileMenuOpen(false); navigate("/dashboard"); }}>
+                  Dashboard
+                </Button>
+              ) : (
+                <>
+                  <Button className="w-full justify-center py-3" variant="outline" size="lg" onClick={() => { setIsMobileMenuOpen(false); navigate("/signin"); }}>
+                    Sign in
+                  </Button>
+                  <Button className="w-full justify-center py-3" size="lg" onClick={() => { setIsMobileMenuOpen(false); navigate("/signup"); }}>
+                    Create Account
+                  </Button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 w-full relative z-10">
         

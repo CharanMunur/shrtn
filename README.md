@@ -20,10 +20,13 @@ This repository is organized as a monorepo:
 
 ## Key Features
 
+- **Social Authentication (Google & GitHub)**: Integrated credentials-free login and signup with secure authorization flows, client-side callback redirection, and auto-linking for matching email accounts.
 - **Fast Redis Redirects**: Redirection engine backed by Upstash Redis (24h caching) with fallbacks to Supabase PostgreSQL.
 - **Interactive Vector World Map**: Visualizes click density instantly across country boundaries using a lightweight, self-contained, offline-first vector map, complete with hover highlighting and custom floating tooltips matching the Recharts popover style.
 - **GeoIP Location Tracking**: Resolves countries, regions, and cities using background lookup fallbacks to `ip-api.com` and proxy header extractions. Includes loopback client geolocation during local development tests.
-- **24x7 Traffic Activity Heatmap**: Custom punchcard visualizer graphing hourly click density across all days of the week, with modernized popover-style hover tooltips.
+- **24x7 Traffic Activity Heatmap**: Custom punchcard visualizer graphing hourly click density across all days of the week, with modernized popover-style hover tooltips adjusted dynamically to match the client's local timezone.
+- **Offline-First SVG Icon Assets**: Serves clean browser, operating system, traffic referrer, and device icons directly from the local `/icons/` public folder, avoiding CDN request latency or network failures.
+- **Dicebear Notionists Avatars**: Generates unique, highly-styled human avatars dynamically for the "Recent Clicks" feed, utilizing the visitor's IP address as a persistent random seed.
 - **Umami-Style Dashboard Panels**: Simplified, highly-organized layout with clean normal-casing headers, bottom active-border indicators, and bottom footer maximize buttons:
   - *Environment*: Browsers, OS Types, and Devices.
   - *Location*: Countries, Regions, and Cities (with dynamic country flag icons shown for regions and cities).

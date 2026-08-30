@@ -70,14 +70,16 @@ src/
 
 ## Environment Variables
 
-Create `client/.env`:
+Create `client/.env` in the client directory:
 
 ```env
-VITE_API_BASE_URL=https://shrtn.fun           # Render backend
-VITE_PUBLIC_SHORT_URL_BASE=https://shrtn.fun  # Displayed in short link UI
+VITE_API_BASE_URL=https://shrtn.fun           # Render backend API URL
+VITE_PUBLIC_SHORT_URL_BASE=https://shrtn.fun  # Base URL used for public links display
+VITE_GOOGLE_CLIENT_ID=your-google-client-id   # Google OAuth App Client ID
+VITE_GITHUB_CLIENT_ID=your-github-client-id   # GitHub OAuth App Client ID
 ```
 
-For local development these default to `http://localhost:8080`.
+For local development, `VITE_API_BASE_URL` and `VITE_PUBLIC_SHORT_URL_BASE` fallback to `http://localhost:8080`.
 
 ---
 
