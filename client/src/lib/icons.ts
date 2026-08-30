@@ -114,12 +114,16 @@ export function getBrowserIcon(name: string): IconData | null {
 export function getOsIcon(name: string): IconData | null {
   const k = name.toLowerCase()
   if (k.includes("windows")) return OS_ICONS.windows
-  if (k.includes("mac") || k.includes("os x") || k.includes("osx")) return OS_ICONS.macos
-  if (k.includes("ubuntu")) return OS_ICONS.ubuntu
-  if (k.includes("linux")) return OS_ICONS.linux
+  
+  // Specific mobile and distro OSs first
   if (k.includes("android")) return OS_ICONS.android
   if (k.includes("ios") || k.includes("iphone") || k.includes("ipad")) return OS_ICONS.ios
   if (k.includes("chromeos") || k.includes("chrome os")) return OS_ICONS.chromeos
+  if (k.includes("ubuntu")) return OS_ICONS.ubuntu
+  
+  // Generic OSs last
+  if (k.includes("mac") || k.includes("os x") || k.includes("osx")) return OS_ICONS.macos
+  if (k.includes("linux")) return OS_ICONS.linux
   return null
 }
 

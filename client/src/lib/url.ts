@@ -54,8 +54,16 @@ export function extractShortCode(shortUrl: string | null | undefined): string {
 }
 
 export function safeDate(value: string | Date) {
-  const date = typeof value === "string" ? new Date(value) : value
-  return Number.isNaN(date.getTime()) ? null : date
+  if (typeof value === "string") {
+    let dateStr = value.trim()
+    // If it's an ISO string without timezone indicator, append Z to treat as UTC
+    if (dateStr.includes("T") && !dateStr.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+      dateStr = dateStr + "Z"
+    }
+    const date = new Date(dateStr)
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  return Number.isNaN(value.getTime()) ? null : value
 }
 
 export function formatDateTime(value: string | Date) {

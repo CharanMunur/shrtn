@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useAuth } from "@/providers/auth-provider"
 import { getUserUrls, getUrlAnalytics } from "@/lib/urls-api"
 import { ApiError } from "@/lib/api"
-import { formatDateTime, enrichUrls, type EnrichedUrl } from "@/lib/url"
+import { formatDateTime, formatRelativeTime, enrichUrls, type EnrichedUrl } from "@/lib/url"
 import { getBrowserIcon, getOsIcon, getCountryCode, type IconData } from "@/lib/icons"
 import type { UrlAnalyticsResponse, UrlResponse } from "@/types/api"
 import {
@@ -530,27 +530,80 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                       "seed": click.ipAddress || `Felix-${i}`
                     });
                     const svgMarkup = avatar.toString();
+                    
+                    const browserInfo = getBrowserIcon(click.userAgent);
+                    const osInfo = getOsIcon(click.userAgent);
+                    
+                    const ua = click.userAgent.toLowerCase();
+                    let deviceLabel = "Desktop";
+                    if (ua.includes("mobile")) {
+                      deviceLabel = "Mobile";
+                    } else if (ua.includes("tablet")) {
+                      deviceLabel = "Tablet";
+                    } else if (ua.includes("bot")) {
+                      deviceLabel = "Bot";
+                    }
+
+                    const relTime = click.clickedAt ? formatRelativeTime(click.clickedAt) : "—";
+                    const absTime = click.clickedAt ? formatDateTime(click.clickedAt) : "—";
 
                     return (
-                      <div key={i} className="flex items-start gap-3 px-5 py-3.5 hover:bg-muted/10 transition-colors">
+                      <div key={i} className="flex items-center gap-3.5 px-5 py-4 hover:bg-muted/10 transition-colors">
+                        {/* Avatar */}
                         <div 
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full overflow-hidden bg-muted"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full overflow-hidden bg-muted border border-border/60 shadow-sm"
                           dangerouslySetInnerHTML={{ __html: svgMarkup }}
                         />
+                        
+                        {/* Session Metadata */}
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-foreground font-medium truncate">
-                            {click.userAgent ? parseUserAgent(click.userAgent) : "Unknown agent"}
+                          <p className="text-sm font-semibold text-foreground tracking-tight">
+                            {click.ipAddress ? `Visitor (${click.ipAddress})` : "Anonymous Visitor"}
                           </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                            {click.userAgent || "—"}
-                          </p>
+                          
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[11px] font-medium text-muted-foreground">
+                            {/* Browser */}
+                            <span className="inline-flex items-center gap-1">
+                              {browserInfo && (
+                                <img 
+                                  src={browserInfo.url} 
+                                  className="h-3.5 w-3.5 object-contain shrink-0" 
+                                  alt={browserInfo.label} 
+                                />
+                              )}
+                              <span>{browserInfo?.label || parseUserAgent(click.userAgent)}</span>
+                            </span>
+                            
+                            <span className="text-muted-foreground/30 text-xs">•</span>
+                            
+                            {/* OS */}
+                            <span className="inline-flex items-center gap-1">
+                              {osInfo && (
+                                <img 
+                                  src={osInfo.url} 
+                                  className="h-3.5 w-3.5 object-contain shrink-0 dark:invert" 
+                                  alt={osInfo.label} 
+                                />
+                              )}
+                              <span>{osInfo?.label || "Unknown OS"}</span>
+                            </span>
+                            
+                            <span className="text-muted-foreground/30 text-xs">•</span>
+                            
+                            {/* Device */}
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40 font-semibold uppercase tracking-wider shrink-0">
+                              {deviceLabel}
+                            </span>
+                          </div>
                         </div>
+                        
+                        {/* Time details */}
                         <div className="text-right shrink-0">
-                          <p className="text-xs text-muted-foreground">
-                            {click.ipAddress || "—"}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground/75 mt-0.5">
-                            {click.clickedAt ? formatDateTime(click.clickedAt) : "—"}
+                          <span className="text-xs font-bold text-foreground capitalize">
+                            {relTime}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground/70 mt-1 font-medium">
+                            {absTime.split(",")[1]?.trim() || absTime}
                           </p>
                         </div>
                       </div>
@@ -826,18 +879,43 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
     "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm", "11pm"
   ]
 
+  const localHeatmap = useMemo(() => {
+    const shifted = Array.from({ length: 7 }, () => Array(24).fill(0));
+    if (!heatmap) return shifted;
+
+    const timezoneOffsetMinutes = new Date().getTimezoneOffset();
+
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        const count = heatmap[d]?.[h] ?? 0;
+        if (count > 0) {
+          // Shift at minute-level granularity using the middle of the hour block (30 mins)
+          let totalMinutes = (d * 24 + h) * 60 + 30 - timezoneOffsetMinutes;
+          
+          // Wrap around a 7-day week (7 days * 24 hours * 60 minutes = 10080 minutes)
+          totalMinutes = (totalMinutes % 10080 + 10080) % 10080;
+          
+          const totalHours = Math.floor(totalMinutes / 60);
+          const localD = Math.floor(totalHours / 24);
+          const localH = totalHours % 24;
+          shifted[localD][localH] += count;
+        }
+      }
+    }
+    return shifted;
+  }, [heatmap])
+
   const maxClicks = useMemo(() => {
-    if (!heatmap) return 1
     let m = 1
     for (let d = 0; d < 7; d++) {
       for (let h = 0; h < 24; h++) {
-        if (heatmap[d] && heatmap[d][h] > m) {
-          m = heatmap[d][h]
+        if (localHeatmap[d][h] > m) {
+          m = localHeatmap[d][h]
         }
       }
     }
     return m
-  }, [heatmap])
+  }, [localHeatmap])
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col">
@@ -872,10 +950,9 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
                 
                 <div className="grid grid-cols-7 justify-items-center">
                   {Array.from({ length: 7 }).map((_, dIdx) => {
-                    const count = heatmap?.[dIdx]?.[hIdx] ?? 0
+                    const count = localHeatmap[dIdx][hIdx]
                     const intensity = count / maxClicks
-                    const size = count > 0 ? 6 + intensity * 10 : 5
-                    const opacity = count > 0 ? 0.3 + intensity * 0.7 : 0.05
+                    const opacity = count > 0 ? 0.3 + intensity * 0.7 : 1
                     
                     return (
                       <div
@@ -883,10 +960,12 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
                         className="flex items-center justify-center w-6 h-5 group relative"
                       >
                         <div
-                          className="rounded-full bg-primary transition-all duration-300"
+                          className={`rounded-full transition-all duration-300 ${
+                            count > 0 ? "bg-primary shadow-sm" : "bg-muted-foreground/15"
+                          }`}
                           style={{
-                            width: `${size}px`,
-                            height: `${size}px`,
+                            width: "12px",
+                            height: "12px",
                             opacity: opacity,
                           }}
                         />
