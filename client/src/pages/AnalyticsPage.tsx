@@ -29,6 +29,10 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import { WorldMap } from "@/components/WorldMap"
+import { Style, Avatar } from '@dicebear/core'
+import definition from '@dicebear/styles/notionists.json' with { type: 'json' }
+
+const dicebearStyle = new Style(definition);
 
 interface AnalyticsPageProps {
   initialShortCode?: string | null
@@ -516,29 +520,42 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                     <p className="text-sm">No recent clicks</p>
                   </div>
                 ) : (
-                  analytics.lastClicks.slice(0, 5).map((click, i) => (
-                    <div key={i} className="flex items-start gap-3 px-5 py-3.5 hover:bg-muted/10 transition-colors">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-semibold">
-                        {i + 1}
+                  analytics.lastClicks.slice(0, 5).map((click, i) => {
+                    const avatar = new Avatar(dicebearStyle, {
+                      "backgroundColor": [],
+                      "beardProbability": 0,
+                      "gestureProbability": 0,
+                      "glassesProbability": 0,
+                      "clothesGraphicProbability": 0,
+                      "seed": click.ipAddress || `Felix-${i}`
+                    });
+                    const svgMarkup = avatar.toString();
+
+                    return (
+                      <div key={i} className="flex items-start gap-3 px-5 py-3.5 hover:bg-muted/10 transition-colors">
+                        <div 
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full overflow-hidden bg-muted"
+                          dangerouslySetInnerHTML={{ __html: svgMarkup }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-foreground font-medium truncate">
+                            {click.userAgent ? parseUserAgent(click.userAgent) : "Unknown agent"}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                            {click.userAgent || "—"}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-muted-foreground">
+                            {click.ipAddress || "—"}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/75 mt-0.5">
+                            {click.clickedAt ? formatDateTime(click.clickedAt) : "—"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs text-foreground font-medium truncate">
-                          {click.userAgent ? parseUserAgent(click.userAgent) : "Unknown agent"}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                          {click.userAgent || "—"}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">
-                          {click.ipAddress || "—"}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground/75 mt-0.5">
-                          {click.clickedAt ? formatDateTime(click.clickedAt) : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
