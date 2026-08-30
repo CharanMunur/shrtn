@@ -56,6 +56,11 @@ export const BROWSER_ICONS: Record<string, IconData> = {
     color: "#0A66C2",
     url: "/icons/linkedin.svg",
   },
+  curl: {
+    label: "curl",
+    color: "#073B4C",
+    url: `${SI_CDN}/curl/073B4C`,
+  },
 }
 
 export const OS_ICONS: Record<string, IconData> = {
@@ -108,6 +113,7 @@ export function getBrowserIcon(name: string): IconData | null {
   if (k.includes("samsung")) return BROWSER_ICONS.samsung
   if (k.includes("whatsapp")) return BROWSER_ICONS.whatsapp
   if (k.includes("linkedin")) return BROWSER_ICONS.linkedin
+  if (k.includes("curl")) return BROWSER_ICONS.curl
   return null
 }
 
@@ -125,6 +131,14 @@ export function getOsIcon(name: string): IconData | null {
   if (k.includes("mac") || k.includes("os x") || k.includes("osx")) return OS_ICONS.macos
   if (k.includes("linux")) return OS_ICONS.linux
   return null
+}
+
+export function getDeviceType(userAgent: string): "Desktop" | "Mobile" | "Tablet" | "Bot" {
+  const ua = userAgent.toLowerCase();
+  if (ua.includes("tablet")) return "Tablet";
+  if (ua.includes("mobile")) return "Mobile";
+  if (ua.includes("bot")) return "Bot";
+  return "Desktop";
 }
 
 const REFERRER_ICONS: Record<string, IconData> = {

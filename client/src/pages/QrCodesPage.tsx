@@ -3,9 +3,10 @@ import { QrCode, Loader2, RefreshCw, ExternalLink, Download, Trash2 } from "luci
 import { useAuth } from "@/providers/auth-provider"
 import { getUserUrls, generateQrCodeApi, revokeQrCodeApi, toggleUrl } from "@/lib/urls-api"
 import { ApiError } from "@/lib/api"
-import { enrichUrls, type EnrichedUrl } from "@/lib/url"
+import { enrichUrls, downloadQrCode, type EnrichedUrl } from "@/lib/url"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { toast } from "sonner"
 
 export function QrCodesPage() {
   const { token } = useAuth()
@@ -39,8 +40,9 @@ export function QrCodesPage() {
       setUrls((prev) =>
         prev.map((u) => (u.shortCode === shortCode ? { ...u, isActive: newActive } : u))
       )
-    } catch {
-      // silently fail
+      toast.success(newActive ? "Link activated." : "Link deactivated.")
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to toggle link status.")
     } finally {
       setTogglingLink(null)
     }
@@ -53,8 +55,9 @@ export function QrCodesPage() {
       setUrls((prev) =>
         prev.map((u) => (u.shortCode === shortCode ? { ...u, hasQrCode: true } : u))
       )
+      toast.success("QR Code generated successfully.")
     } catch (err) {
-      // ignore
+      toast.error(err instanceof ApiError ? err.message : "Failed to generate QR Code.")
     } finally {
       setActionLoading(null)
     }
@@ -67,8 +70,9 @@ export function QrCodesPage() {
       setUrls((prev) =>
         prev.map((u) => (u.shortCode === shortCode ? { ...u, hasQrCode: false } : u))
       )
+      toast.success("QR Code revoked successfully.")
     } catch (err) {
-      // ignore
+      toast.error(err instanceof ApiError ? err.message : "Failed to revoke QR Code.")
     } finally {
       setActionLoading(null)
     }
@@ -76,18 +80,9 @@ export function QrCodesPage() {
 
   async function handleDownload(shortUrl: string, shortCode: string) {
     try {
-      const response = await fetch(`${shortUrl}?format=qr`)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `shrtn-${shortCode}-qr.png`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      await downloadQrCode(shortUrl, shortCode)
     } catch (err) {
-      console.error("Failed to download QR code", err)
+      toast.error("Failed to download QR code.")
     }
   }
 

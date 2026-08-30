@@ -105,3 +105,17 @@ export function formatRelativeTime(value: string | Date) {
   const absDays = Math.round(absHours / 24)
   return formatter.format(Math.sign(diff) * absDays, "day")
 }
+
+export async function downloadQrCode(shortUrl: string, shortCode: string): Promise<void> {
+  const response = await fetch(`${shortUrl}?format=qr`)
+  if (!response.ok) throw new Error("Failed to download QR code image")
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `shrtn-${shortCode}-qr.png`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  window.URL.revokeObjectURL(url)
+}

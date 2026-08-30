@@ -4,6 +4,7 @@ import { ShortenedUrlResult } from "@/components/url-shortener/shortenedUrlResul
 import { UrlShortenerForm } from "@/components/url-shortener/urlShortenerForm"
 import { UrlShortenerHeader } from "@/components/url-shortener/urlShortenerHeader"
 import { ModeToggle } from "@/features/theme/mode-toggle"
+import { createShortUrl } from "@/lib/urls-api"
 
 export function UrlShortenerPage() {
   const [longUrl, setLongUrl] = useState("")
@@ -37,19 +38,7 @@ export function UrlShortenerPage() {
     setCopied(false)
 
     try {
-      const response = await fetch("/shorten", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ originalUrl: trimmedUrl }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Unable to shorten the URL.")
-      }
-
-      const data: { shortUrl?: string } = await response.json()
+      const data = await createShortUrl({ originalUrl: trimmedUrl })
       if (!data.shortUrl) {
         throw new Error("The server returned an empty short URL.")
       }

@@ -3,7 +3,7 @@ import type { UrlAnalyticsResponse, UrlRequest, UrlResponse } from "@/types/api"
 
 export async function createShortUrl(
   request: UrlRequest,
-  token: string
+  token?: string
 ): Promise<UrlResponse> {
   return requestJson<UrlResponse>("/shorten", {
     method: "POST",

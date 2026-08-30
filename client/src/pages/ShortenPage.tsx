@@ -3,16 +3,10 @@ import { Loader2, Link2, CheckCircle2, Copy, ExternalLink, Zap, AlertTriangle, Q
 import { useAuth } from "@/providers/auth-provider"
 import { createShortUrl, getUserUrls } from "@/lib/urls-api"
 import { ApiError } from "@/lib/api"
-import { extractShortCode, buildShortUrl } from "@/lib/url"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { extractShortCode, buildShortUrl, downloadQrCode } from "@/lib/url"
+
+import { QrCodeDialog } from "@/components/url-shortener/QrCodeDialog"
+import { toast } from "sonner"
 
 const URL_LIMIT = 25
 
@@ -29,20 +23,11 @@ export function ShortenPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [qrCodeCode, setQrCodeCode] = useState<string>("")
 
-  async function handleDownloadQrCode(shortUrl: string, shortCode: string) {
+  async function handleDownload(shortUrl: string, shortCode: string) {
     try {
-      const response = await fetch(`${shortUrl}?format=qr`)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `shrtn-${shortCode}-qr.png`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      await downloadQrCode(shortUrl, shortCode)
     } catch (err) {
-      console.error("Failed to download QR code", err)
+      toast.error("Failed to download QR code.")
     }
   }
 
@@ -318,45 +303,13 @@ export function ShortenPage() {
       )}
 
       {/* QR Code Dialog */}
-      <Dialog open={!!qrCodeUrl} onOpenChange={(open) => { if (!open) setQrCodeUrl(null); }}>
-        <DialogContent className="sm:max-w-xs p-5">
-          <DialogHeader className="space-y-1">
-            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-              <QrCode className="h-5 w-5 text-primary" />
-              Link QR Code
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Scan the QR code to visit: <code className="text-primary font-mono font-bold">/{qrCodeCode}</code>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-4 bg-muted/20 rounded-lg border border-border/50 my-2">
-            {qrCodeUrl && (
-              <img
-                src={`${qrCodeUrl}?format=qr`}
-                alt={`QR Code for /${qrCodeCode}`}
-                className="h-44 w-44 bg-white p-2 border border-border shadow-xs"
-              />
-            )}
-          </div>
-          <DialogFooter className="flex gap-2 sm:justify-between pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setQrCodeUrl(null)}
-              className="w-full sm:w-auto text-xs"
-            >
-              Close
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleDownloadQrCode(qrCodeUrl!, qrCodeCode)}
-              className="w-full sm:w-auto text-xs flex items-center justify-center gap-1.5"
-            >
-              Download
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <QrCodeDialog
+        isOpen={!!qrCodeUrl}
+        onClose={() => setQrCodeUrl(null)}
+        qrCodeUrl={qrCodeUrl}
+        qrCodeCode={qrCodeCode}
+        onDownload={() => handleDownload(qrCodeUrl!, qrCodeCode)}
+      />
     </div>
   )
 }

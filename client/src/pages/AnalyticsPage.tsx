@@ -4,7 +4,7 @@ import { useAuth } from "@/providers/auth-provider"
 import { getUserUrls, getUrlAnalytics } from "@/lib/urls-api"
 import { ApiError } from "@/lib/api"
 import { formatDateTime, formatRelativeTime, enrichUrls, type EnrichedUrl } from "@/lib/url"
-import { getBrowserIcon, getOsIcon, getCountryCode, type IconData } from "@/lib/icons"
+import { getBrowserIcon, getOsIcon, getDeviceType, getCountryCode, type IconData } from "@/lib/icons"
 import type { UrlAnalyticsResponse, UrlResponse } from "@/types/api"
 import {
   Loader2,
@@ -207,7 +207,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Link info card */}
-          <div className="rounded-lg border border-border bg-card px-5 py-4 overflow-hidden">
+          <div className="rounded-xl border border-border bg-card px-5 py-4 overflow-hidden">
             <div className="flex items-start gap-3 w-full min-w-0">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Link2 className="h-4 w-4" />
@@ -254,7 +254,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
           </div>
 
           {/* Clicks over time chart */}
-          <div className="rounded-lg border border-border bg-card p-5">
+          <div className="rounded-xl border border-border bg-card p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h3 className="font-semibold text-base">Clicks traffic</h3>
@@ -333,7 +333,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
           </div>
 
           {/* World Map Geographic Distribution */}
-          <div className="rounded-lg border border-border bg-card p-5 mb-6 flex flex-col">
+          <div className="rounded-xl border border-border bg-card p-5 mb-6 flex flex-col">
             <div className="px-1 pt-1 pb-3 shrink-0">
               <h3 className="text-base font-bold text-foreground leading-none">Geographic Distribution</h3>
               <p className="text-xs text-muted-foreground mt-1.5">
@@ -348,7 +348,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
           {/* Browser, OS, Devices, Countries, and Traffic Sources breakdown — Umami style */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Environment Panel */}
-            <div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col h-[424px]">
+            <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col h-[424px]">
               {/* Normal Casing Header */}
               <div className="px-5 pt-5 pb-3 shrink-0">
                 <h3 className="text-base font-bold text-foreground leading-none">Environment</h3>
@@ -424,7 +424,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             </div>
 
             {/* Location Panel */}
-            <div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col h-[424px]">
+            <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col h-[424px]">
               {/* Normal Casing Header */}
               <div className="px-5 pt-5 pb-3 shrink-0">
                 <h3 className="text-base font-bold text-foreground leading-none">Location</h3>
@@ -505,7 +505,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             <TrafficHeatmap heatmap={analytics.trafficHeatmap} />
 
             {/* Recent Clicks Card */}
-            <div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col">
+            <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
               {/* Normal Casing Header */}
               <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60">
                 <h3 className="text-base font-bold text-foreground leading-none">Recent Clicks</h3>
@@ -533,16 +533,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                     
                     const browserInfo = getBrowserIcon(click.userAgent);
                     const osInfo = getOsIcon(click.userAgent);
-                    
-                    const ua = click.userAgent.toLowerCase();
-                    let deviceLabel = "Desktop";
-                    if (ua.includes("mobile")) {
-                      deviceLabel = "Mobile";
-                    } else if (ua.includes("tablet")) {
-                      deviceLabel = "Tablet";
-                    } else if (ua.includes("bot")) {
-                      deviceLabel = "Bot";
-                    }
+                    const deviceLabel = getDeviceType(click.userAgent);
 
                     const relTime = click.clickedAt ? formatRelativeTime(click.clickedAt) : "—";
                     const absTime = click.clickedAt ? formatDateTime(click.clickedAt) : "—";
@@ -571,7 +562,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                                   alt={browserInfo.label} 
                                 />
                               )}
-                              <span>{browserInfo?.label || parseUserAgent(click.userAgent)}</span>
+                              <span>{browserInfo?.label || (click.userAgent ? (click.userAgent.split(" ")[0]?.split("/")[0] || "Unknown") : "Unknown")}</span>
                             </span>
                             
                             <span className="text-muted-foreground/30 text-xs">•</span>
@@ -619,7 +610,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       {/* Expanded Tab Details Modal */}
       {expandedTab !== null && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6">
-          <div className="bg-card border border-border rounded-lg w-full max-w-4xl flex flex-col h-[85vh] max-h-[85vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-card border border-border rounded-xl w-full max-w-4xl flex flex-col h-[85vh] max-h-[85vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <h3 className="font-bold text-base capitalize flex items-center gap-2">
@@ -918,7 +909,7 @@ function TrafficHeatmap({ heatmap }: { heatmap: number[][] }) {
   }, [localHeatmap])
 
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col">
+    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
       {/* Normal Casing Header */}
       <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60">
         <h3 className="text-base font-bold text-foreground leading-none">Traffic Activity</h3>
@@ -1015,12 +1006,3 @@ function EmptyState({ urls }: { urls: UrlResponse[] }) {
   )
 }
 
-function parseUserAgent(ua: string): string {
-  if (ua.includes("Chrome") && !ua.includes("Edg")) return "Chrome"
-  if (ua.includes("Firefox")) return "Firefox"
-  if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari"
-  if (ua.includes("Edg")) return "Edge"
-  if (ua.includes("Opera") || ua.includes("OPR")) return "Opera"
-  if (ua.includes("curl")) return "curl"
-  return ua.split(" ")[0] ?? "Unknown"
-}
