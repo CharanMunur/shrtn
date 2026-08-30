@@ -16,8 +16,6 @@ import {
   Link2,
   BarChart3,
   Smartphone,
-  Tablet,
-  Laptop,
   Bot,
   MapPin,
   Maximize2,
@@ -398,10 +396,12 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                     total={total}
                     renderIcon={(name) => {
                       const k = name.toLowerCase()
-                      if (k.includes("mobile")) return <Smartphone className="h-4 w-4 text-muted-foreground" />
-                      if (k.includes("tablet")) return <Tablet className="h-4 w-4 text-muted-foreground" />
-                      if (k.includes("bot")) return <Bot className="h-4 w-4 text-muted-foreground" />
-                      return <Laptop className="h-4 w-4 text-muted-foreground" />
+                      let src = "/icons/laptop.svg"
+                      if (k.includes("mobile")) src = "/icons/mobile.svg"
+                      else if (k.includes("tablet")) src = "/icons/tablet.svg"
+                      else if (k.includes("desktop")) src = "/icons/desktop.svg"
+                      else if (k.includes("bot")) return <Bot className="h-4 w-4 text-muted-foreground" />
+                      return <img src={src} className="h-4 w-4 object-contain opacity-70 dark:invert" alt={name} />
                     }}
                   />
                 )}
@@ -618,10 +618,12 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   total={total}
                   renderIcon={(name) => {
                     const k = name.toLowerCase()
-                    if (k.includes("mobile")) return <Smartphone className="h-4 w-4 text-muted-foreground" />
-                    if (k.includes("tablet")) return <Tablet className="h-4 w-4 text-muted-foreground" />
-                    if (k.includes("bot")) return <Bot className="h-4 w-4 text-muted-foreground" />
-                    return <Laptop className="h-4 w-4 text-muted-foreground" />
+                    let src = "/icons/laptop.svg"
+                    if (k.includes("mobile")) src = "/icons/mobile.svg"
+                    else if (k.includes("tablet")) src = "/icons/tablet.svg"
+                    else if (k.includes("desktop")) src = "/icons/desktop.svg"
+                    else if (k.includes("bot")) return <Bot className="h-4 w-4 text-muted-foreground" />
+                    return <img src={src} className="h-4 w-4 object-contain opacity-70 dark:invert" alt={name} />
                   }}
                 />
               )}

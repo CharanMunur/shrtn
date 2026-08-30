@@ -33,6 +33,7 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
     private final OtpService otpService;
     private final AuthUtils authUtils;
+    private final OAuthService oAuthService;
 
     public MessageResponse register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -107,5 +108,61 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return new MessageResponse("Password changed successfully.");
+    }
+
+    public AuthResponse oauthLogin(String provider, String code) {
+        try {
+            String email;
+            String providerId;
+
+            if ("GOOGLE".equalsIgnoreCase(provider)) {
+                tools.jackson.databind.JsonNode profile = oAuthService.getGoogleProfile(code);
+                email = profile.path("email").asText();
+                providerId = profile.path("sub").asText();
+            } else if ("GITHUB".equalsIgnoreCase(provider)) {
+                tools.jackson.databind.JsonNode profile = oAuthService.getGitHubProfile(code);
+                email = profile.path("email").asText();
+                providerId = profile.path("id").asText();
+            } else {
+                throw new RuntimeException("Unsupported OAuth provider: " + provider);
+            }
+
+            if (email == null || email.isEmpty()) {
+                throw new RuntimeException("Failed to retrieve email from " + provider + " profile");
+            }
+
+            // Check if user already exists by provider + providerId
+            User user = userRepository.findByProviderAndProviderId(provider.toUpperCase(), providerId)
+                .orElseGet(() -> {
+                    // Check if a user with that email already exists
+                    java.util.Optional<User> existingUserOpt = userRepository.findByEmail(email);
+                    if (existingUserOpt.isPresent()) {
+                        User existingUser = existingUserOpt.get();
+                        existingUser.setProvider(provider.toUpperCase());
+                        existingUser.setProviderId(providerId);
+                        existingUser.setEmailVerified(true);
+                        return userRepository.save(existingUser);
+                    } else {
+                        User newUser = User.builder()
+                            .email(email)
+                            .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
+                            .isEmailVerified(true)
+                            .provider(provider.toUpperCase())
+                            .providerId(providerId)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                        return userRepository.save(newUser);
+                    }
+                });
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+            String token = jwtUtils.generateToken(userDetails);
+            return AuthResponse.builder()
+                .token(token)
+                .message("Sign in successful via " + provider)
+                .build();
+        } catch (Exception e) {
+            throw new RuntimeException("OAuth login failed: " + e.getMessage(), e);
+        }
     }
 }

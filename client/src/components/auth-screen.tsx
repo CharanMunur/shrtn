@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { useAuth } from "@/providers/auth-provider"
 import { ApiError } from "@/lib/api"
 import { ModeToggle } from "@/features/theme/mode-toggle"
+import { toast } from "sonner"
 
 
 type Tab = "login" | "register" | "verify" | "forgot" | "reset"
@@ -14,6 +15,7 @@ interface AuthScreenProps {
 
 export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { login, register, verifyOtp, resendOtp, forgotPassword, resetPassword } = useAuth()
   const [tab, setTab] = useState<Tab>(initialTab)
   const [email, setEmail] = useState("")
@@ -27,6 +29,28 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
   const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState("")
   const [infoMessage, setInfoMessage] = useState("")
+
+  useEffect(() => {
+    const err = searchParams.get("error")
+    if (err) {
+      setError(decodeURIComponent(err))
+    }
+  }, [searchParams])
+
+  const handleGoogleSignIn = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
+    const redirectUri = window.location.origin + "/oauth/callback/google"
+    const scope = "email profile openid"
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`
+    window.location.href = authUrl
+  }
+
+  const handleGitHubSignIn = () => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || ""
+    const redirectUri = window.location.origin + "/oauth/callback/github"
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`
+    window.location.href = authUrl
+  }
 
   useEffect(() => {
     if (initialTab && initialTab !== "verify" && initialTab !== "forgot" && initialTab !== "reset") {
@@ -48,6 +72,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
       setError("")
       try {
         await verifyOtp(email.trim(), otpCode.trim())
+        toast.success("Account verified! Welcome to shrtn.")
       } catch (err) {
         setError(err instanceof ApiError ? err.message : "Verification failed.")
       } finally {
@@ -66,6 +91,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
       setInfoMessage("")
       try {
         const res = await forgotPassword(email.trim())
+        toast.success(res.message || "OTP code sent to email.")
         setInfoMessage(res.message || "OTP code sent to email.")
         setTab("reset")
       } catch (err) {
@@ -94,6 +120,7 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
           otpCode: otpCode.trim(),
           newPassword,
         })
+        toast.success(res.message || "Password reset successful.")
         setInfoMessage(res.message || "Password reset successful.")
         setTab("login")
         setPassword("")
@@ -118,8 +145,10 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
     try {
       if (tab === "login") {
         await login({ email: email.trim(), password })
+        toast.success("Successfully logged in!")
       } else {
         const res = await register({ email: email.trim(), password })
+        toast.success(res.message || "Verification code sent. Please check your inbox.")
         setInfoMessage(res.message || "Verification code sent. Please check your inbox.")
         setTab("verify")
       }
@@ -448,6 +477,55 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
                       : "Reset Password"}
             </button>
 
+            {/* Social Divider & Actions */}
+            {(tab === "login" || tab === "register") && (
+              <>
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-border"></div>
+                  <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Or continue with</span>
+                  <div className="flex-grow border-t border-border"></div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    className="flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                    <span>Google</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGitHubSignIn}
+                    className="flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                  >
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.193 22 16.44 22 12.017 22 6.484 17.522 2 12 2z" />
+                    </svg>
+                    <span>GitHub</span>
+                  </button>
+                </div>
+              </>
+            )}
+
             {tab === "verify" && (
               <div className="text-center text-xs">
                 <span className="text-muted-foreground">Didn't receive the code? </span>
@@ -499,19 +577,12 @@ export function AuthScreen({ initialTab = "login" }: AuthScreenProps) {
 
       {/* Right Column: Custom 181818 Logo Area */}
       <div className="relative hidden bg-[#181818] md:flex flex-col items-center justify-center p-12 select-none h-full w-full">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="290 515 705 220" className="w-3/4 h-auto text-white">
-          <g fill="currentColor">
-            <path d="M 631.00 617.00 C 625.17 617.00 603.50 616.67 596.00 617.00 C 588.50 617.33 589.67 617.83 586.00 619.00 C 582.33 620.17 578.50 621.00 574.00 624.00 C 569.50 627.00 562.50 633.17 559.00 637.00 C 555.50 640.83 554.67 643.17 553.00 647.00 C 551.33 650.83 549.67 646.17 549.00 660.00 C 548.33 673.83 549.00 718.33 549.00 730.00 L 567.00 730.00 C 567.00 719.67 566.50 680.33 567.00 668.00 C 567.50 655.67 568.67 659.33 570.00 656.00 C 571.33 652.67 572.83 650.50 575.00 648.00 C 577.17 645.50 580.17 642.83 583.00 641.00 C 585.83 639.17 584.00 637.67 592.00 637.00 C 600.00 636.33 624.50 637.00 631.00 637.00 L 631.00 617.00 Z"/>
-            <path d="M 742.00 730.00 L 760.00 730.00 C 760.00 719.17 759.17 678.33 760.00 665.00 C 760.83 651.67 762.33 654.33 765.00 650.00 C 767.67 645.67 773.17 641.33 776.00 639.00 C 778.83 636.67 778.67 636.83 782.00 636.00 C 785.33 635.17 790.67 634.17 796.00 634.00 C 801.33 633.83 810.00 634.50 814.00 635.00 C 818.00 635.50 816.67 634.67 820.00 637.00 C 823.33 639.33 831.00 645.67 834.00 649.00 C 837.00 652.33 837.00 654.00 838.00 657.00 C 839.00 660.00 839.67 654.83 840.00 667.00 C 840.33 679.17 840.00 719.50 840.00 730.00 L 858.00 730.00 C 858.00 718.00 859.17 673.17 858.00 658.00 C 856.83 642.83 854.17 644.33 851.00 639.00 C 847.83 633.67 843.00 629.33 839.00 626.00 C 835.00 622.67 830.83 620.67 827.00 619.00 C 823.17 617.33 823.17 616.50 816.00 616.00 C 808.83 615.50 792.17 615.00 784.00 616.00 C 775.83 617.00 772.50 618.67 767.00 622.00 C 761.50 625.33 754.67 631.83 751.00 636.00 C 747.33 640.17 746.67 642.33 745.00 647.00 C 743.33 651.67 741.50 650.17 741.00 664.00 C 740.50 677.83 741.83 719.00 742.00 730.00 Z"/>
-            <path d="M 306.00 701.00 L 295.00 716.00 C 297.83 717.83 305.50 724.33 312.00 727.00 C 318.50 729.67 326.00 731.33 334.00 732.00 C 342.00 732.67 352.83 732.17 360.00 731.00 C 367.17 729.83 372.50 727.50 377.00 725.00 C 381.50 722.50 384.50 719.50 387.00 716.00 C 389.50 712.50 391.17 708.17 392.00 704.00 C 392.83 699.83 393.17 695.33 392.00 691.00 C 390.83 686.67 387.50 681.17 385.00 678.00 C 382.50 674.83 380.00 673.67 377.00 672.00 C 374.00 670.33 375.50 670.00 367.00 668.00 C 358.50 666.00 334.33 662.33 326.00 660.00 C 317.67 657.67 318.67 656.67 317.00 654.00 C 315.33 651.33 314.83 647.00 316.00 644.00 C 317.17 641.00 320.50 637.83 324.00 636.00 C 327.50 634.17 332.83 633.50 337.00 633.00 C 341.17 632.50 344.67 632.50 349.00 633.00 C 353.33 633.50 358.17 634.00 363.00 636.00 C 367.83 638.00 375.50 643.50 378.00 645.00 L 389.00 629.00 C 386.00 627.33 377.17 621.33 371.00 619.00 C 364.83 616.67 359.17 615.67 352.00 615.00 C 344.83 614.33 334.83 613.83 328.00 615.00 C 321.17 616.17 315.33 619.50 311.00 622.00 C 306.67 624.50 304.50 626.33 302.00 630.00 C 299.50 633.67 296.83 639.67 296.00 644.00 C 295.17 648.33 296.00 652.33 297.00 656.00 C 298.00 659.67 299.50 663.00 302.00 666.00 C 304.50 669.00 309.00 672.17 312.00 674.00 C 315.00 675.83 311.33 675.00 320.00 677.00 C 328.67 679.00 355.33 683.33 364.00 686.00 C 372.67 688.67 370.50 690.33 372.00 693.00 C 373.50 695.67 374.00 699.17 373.00 702.00 C 372.00 704.83 368.50 708.17 366.00 710.00 C 363.50 711.83 363.00 712.33 358.00 713.00 C 353.00 713.67 342.33 714.50 336.00 714.00 C 329.67 713.50 325.00 712.17 320.00 710.00 C 315.00 707.83 308.33 702.50 306.00 701.00 Z"/>
-            <path d="M 651.00 586.00 C 651.00 603.00 650.50 668.83 651.00 688.00 C 651.50 707.17 652.00 696.33 654.00 701.00 C 656.00 705.67 658.83 711.67 663.00 716.00 C 667.17 720.33 674.33 724.67 679.00 727.00 C 683.67 729.33 683.83 729.50 691.00 730.00 C 698.17 730.50 716.83 730.00 722.00 730.00 L 721.00 711.00 C 715.67 710.83 696.17 711.33 689.00 710.00 C 681.83 708.67 681.17 706.67 678.00 703.00 C 674.83 699.33 671.33 699.00 670.00 688.00 C 668.67 677.00 670.00 645.50 670.00 637.00 L 721.00 636.00 L 722.00 617.00 L 671.00 617.00 L 670.00 586.00 L 651.00 586.00 Z"/>
-            <path d="M 412.00 572.00 L 412.00 730.00 L 431.00 730.00 C 431.00 718.83 430.17 676.33 431.00 663.00 C 431.83 649.67 433.33 654.00 436.00 650.00 C 438.67 646.00 442.33 641.67 447.00 639.00 C 451.67 636.33 457.67 634.67 464.00 634.00 C 470.33 633.33 480.00 634.17 485.00 635.00 C 490.00 635.83 491.00 637.00 494.00 639.00 C 497.00 641.00 500.33 643.00 503.00 647.00 C 505.67 651.00 508.83 649.17 510.00 663.00 C 511.17 676.83 510.00 718.83 510.00 730.00 L 529.00 730.00 C 529.00 718.83 529.67 676.83 529.00 663.00 C 528.33 649.17 526.67 651.50 525.00 647.00 C 523.33 642.50 521.17 639.17 519.00 636.00 C 516.83 632.83 514.83 630.50 512.00 628.00 C 509.17 625.50 506.17 623.00 502.00 621.00 C 497.83 619.00 494.83 616.83 487.00 616.00 C 479.17 615.17 463.00 615.00 455.00 616.00 C 447.00 617.00 442.83 620.00 439.00 622.00 C 435.17 624.00 433.17 627.00 432.00 628.00 L 431.00 572.00 L 412.00 572.00 Z"/>
-            <path d="M 907.00 563.00 C 903.17 566.83 888.50 580.50 884.00 586.00 C 879.50 591.50 880.67 592.17 880.00 596.00 C 879.33 599.83 879.50 605.33 880.00 609.00 C 880.50 612.67 880.83 614.67 883.00 618.00 C 885.17 621.33 889.33 626.33 893.00 629.00 C 896.67 631.67 901.17 633.17 905.00 634.00 C 908.83 634.83 911.67 635.17 916.00 634.00 C 920.33 632.83 925.83 630.83 931.00 627.00 C 936.17 623.17 944.17 614.67 947.00 611.00 C 949.83 607.33 948.83 607.17 948.00 605.00 C 947.17 602.83 943.83 599.17 942.00 598.00 C 940.17 596.83 941.50 594.83 937.00 598.00 C 932.50 601.17 920.17 613.83 915.00 617.00 C 909.83 620.17 908.67 618.00 906.00 617.00 C 903.33 616.00 900.50 612.67 899.00 611.00 C 897.50 609.33 897.33 608.83 897.00 607.00 C 896.67 605.17 896.67 601.83 897.00 600.00 C 897.33 598.17 895.33 600.00 899.00 596.00 C 902.67 592.00 915.67 580.17 919.00 576.00 C 922.33 571.83 920.17 573.00 919.00 571.00 C 917.83 569.00 914.00 565.33 912.00 564.00 C 910.00 562.67 907.83 563.17 907.00 563.00 Z"/>
-            <path d="M 953.00 522.00 C 951.33 522.67 948.00 522.00 943.00 526.00 C 938.00 530.00 926.33 541.67 923.00 546.00 C 919.67 550.33 921.83 549.83 923.00 552.00 C 924.17 554.17 928.17 557.83 930.00 559.00 C 931.83 560.17 929.83 562.17 934.00 559.00 C 938.17 555.83 950.17 543.33 955.00 540.00 C 959.83 536.67 960.67 538.67 963.00 539.00 C 965.33 539.33 967.17 540.33 969.00 542.00 C 970.83 543.67 973.33 546.17 974.00 549.00 C 974.67 551.83 976.67 553.67 973.00 559.00 C 969.33 564.33 955.50 576.33 952.00 581.00 C 948.50 585.67 951.00 585.00 952.00 587.00 C 953.00 589.00 956.00 592.00 958.00 593.00 C 960.00 594.00 959.17 596.83 964.00 593.00 C 968.83 589.17 982.50 575.33 987.00 570.00 C 991.50 564.67 990.17 564.33 991.00 561.00 C 991.83 557.67 992.83 554.50 992.00 550.00 C 991.17 545.50 988.00 537.67 986.00 534.00 C 984.00 530.33 983.17 530.00 980.00 528.00 C 976.83 526.00 971.50 523.00 967.00 522.00 C 962.50 521.00 955.33 522.00 953.00 522.00 Z"/>
-          </g>
-        </svg>
+        <img 
+          src="/logo.svg" 
+          className="w-3/4 h-auto invert shrink-0 select-none" 
+          alt="shrtn logo" 
+        />
       </div>
     </div>
   )
 }
-

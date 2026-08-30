@@ -7,9 +7,11 @@ import com.example.demo.dto.RegisterRequest;
 import com.example.demo.dto.VerifyOtpRequest;
 import com.example.demo.dto.ForgotPasswordRequest;
 import com.example.demo.dto.ResetPasswordRequest;
+import com.example.demo.dto.OAuthRequest;
 import com.example.demo.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,5 +52,12 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.resetPassword(request));
+    }
+
+    @PostMapping("/oauth/{provider}")
+    public ResponseEntity<AuthResponse> oauthLogin(
+            @PathVariable String provider,
+            @RequestBody OAuthRequest request) {
+        return ResponseEntity.ok(authService.oauthLogin(provider, request.getCode()));
     }
 }

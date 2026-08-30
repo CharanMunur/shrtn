@@ -248,7 +248,10 @@ public class UrlService {
         Map<Long, Long> clickCounts = clickRepository
             .countClicksGroupedByUrl(urls)
             .stream()
-            .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+            .collect(Collectors.toMap(
+                row -> ((Number) row[0]).longValue(),
+                row -> ((Number) row[1]).longValue()
+            ));
 
         List<UrlResponse> response = urls
             .stream()
@@ -606,6 +609,7 @@ public class UrlService {
             java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
                 .uri(java.net.URI.create(url))
                 .timeout(java.time.Duration.ofSeconds(3))
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .GET()
                 .build();
             java.net.http.HttpResponse<String> response = httpClient.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());

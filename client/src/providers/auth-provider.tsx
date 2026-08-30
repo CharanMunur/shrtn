@@ -15,6 +15,7 @@ type AuthContextValue = {
   email: string | null
   isHydrated: boolean
   login: (request: LoginRequest) => Promise<void>
+  loginWithToken: (token: string, email: string) => void
   register: (request: RegisterRequest) => Promise<MessageResponse>
   verifyOtp: (email: string, otpCode: string) => Promise<void>
   resendOtp: (email: string) => Promise<MessageResponse>
@@ -61,6 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(EMAIL_STORAGE_KEY, request.email)
         setToken(response.token)
         setEmail(request.email)
+      },
+      loginWithToken: (tokenVal, emailVal) => {
+        localStorage.setItem(TOKEN_STORAGE_KEY, tokenVal)
+        localStorage.setItem(EMAIL_STORAGE_KEY, emailVal)
+        setToken(tokenVal)
+        setEmail(emailVal)
       },
       register: async (request) => {
         const response = await requestJson<MessageResponse>("/api/v1/auth/register", {

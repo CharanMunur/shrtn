@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, memo } from "react"
 import { getCountryCode } from "@/lib/icons"
+import worldMapSvg from "@/assets/worldLow.svg?raw"
 
 interface WorldMapProps {
   countryBreakdown: Record<string, number>
@@ -23,13 +24,163 @@ interface SvgContainerProps {
 const SvgContainer = memo(
   ({ svgText, countryBreakdown, setHoveredCountry }: SvgContainerProps) => {
     const containerRef = useRef<HTMLDivElement>(null)
+    const viewportRef = useRef<SVGElement | null>(null)
 
+    // Zoom and pan state
+    const [zoom, setZoom] = useState(1)
+    const [pan, setPan] = useState({ x: 0, y: 0 })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+    const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+
+    const zoomRef = useRef(zoom)
+    const panRef = useRef(pan)
+
+    useEffect(() => {
+      zoomRef.current = zoom
+      panRef.current = pan
+    }, [zoom, pan])
+
+    // Hide hovered country tooltip during dragging to avoid visual noise/lag
+    useEffect(() => {
+      if (isDragging) {
+        setHoveredCountry(null)
+      }
+    }, [isDragging, setHoveredCountry])
+
+    // Apply zoom/pan transform to viewport group directly
+    useEffect(() => {
+      if (viewportRef.current) {
+        viewportRef.current.setAttribute("transform", `translate(${pan.x}, ${pan.y}) scale(${zoom})`)
+      }
+    }, [zoom, pan])
+
+    // Change cursor style dynamically when dragging
+    useEffect(() => {
+      if (containerRef.current) {
+        const svgEl = containerRef.current.querySelector("svg")
+        if (svgEl) {
+          svgEl.style.cursor = isDragging ? "grabbing" : "grab"
+        }
+      }
+    }, [isDragging])
+
+    // Native Wheel listener for non-passive zoom behavior
+    useEffect(() => {
+      const container = containerRef.current
+      if (!container) return
+
+      const handleNativeWheel = (e: WheelEvent) => {
+        e.preventDefault()
+
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
+        const currentZoom = zoomRef.current
+        const currentPan = panRef.current
+
+        const nextZoom = currentZoom * factor
+        const boundedZoom = Math.max(0.8, Math.min(12, nextZoom))
+
+        const rect = container.getBoundingClientRect()
+        const mouseX = e.clientX - rect.left
+        const mouseY = e.clientY - rect.top
+
+        const dx = mouseX - currentPan.x
+        const dy = mouseY - currentPan.y
+
+        const nextPan = {
+          x: mouseX - dx * (boundedZoom / currentZoom),
+          y: mouseY - dy * (boundedZoom / currentZoom),
+        }
+
+        setZoom(boundedZoom)
+        setPan(nextPan)
+      }
+
+      container.addEventListener("wheel", handleNativeWheel, { passive: false })
+      return () => {
+        container.removeEventListener("wheel", handleNativeWheel)
+      }
+    }, [])
+
+    // Pointer events for dragging
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return // Left click only
+      setIsDragging(true)
+      setDragStart({ x: e.clientX, y: e.clientY })
+      setPanStart({ x: pan.x, y: pan.y })
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDragging) return
+      const dx = e.clientX - dragStart.x
+      const dy = e.clientY - dragStart.y
+      setPan({
+        x: panStart.x + dx,
+        y: panStart.y + dy,
+      })
+    }
+
+    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDragging) return
+      setIsDragging(false)
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+
+    // Zoom buttons implementation
+    const zoomIn = () => {
+      setZoom((prev) => {
+        const nextZoom = Math.min(12, prev * 1.3)
+        const container = containerRef.current
+        if (container) {
+          const rect = container.getBoundingClientRect()
+          const mouseX = rect.width / 2
+          const mouseY = rect.height / 2
+          setPan((prevPan) => {
+            const dx = mouseX - prevPan.x
+            const dy = mouseY - prevPan.y
+            return {
+              x: mouseX - dx * (nextZoom / prev),
+              y: mouseY - dy * (nextZoom / prev),
+            }
+          })
+        }
+        return nextZoom
+      })
+    }
+
+    const zoomOut = () => {
+      setZoom((prev) => {
+        const nextZoom = Math.max(0.8, prev / 1.3)
+        const container = containerRef.current
+        if (container) {
+          const rect = container.getBoundingClientRect()
+          const mouseX = rect.width / 2
+          const mouseY = rect.height / 2
+          setPan((prevPan) => {
+            const dx = mouseX - prevPan.x
+            const dy = mouseY - prevPan.y
+            return {
+              x: mouseX - dx * (nextZoom / prev),
+              y: mouseY - dy * (nextZoom / prev),
+            }
+          })
+        }
+        return nextZoom
+      })
+    }
+
+    const resetZoomPan = () => {
+      setZoom(1)
+      setPan({ x: 0, y: 0 })
+    }
+
+    // Initialize SVG
     useEffect(() => {
       if (!svgText || !containerRef.current) return
 
       const container = containerRef.current
-      // Insert raw SVG text once
-      container.innerHTML = svgText
+      container.innerHTML = svgText.replace(/<\?xml[^>]*\?>/i, "")
 
       const svgEl = container.querySelector("svg")
       if (!svgEl) return
@@ -38,7 +189,24 @@ const SvgContainer = memo(
       svgEl.setAttribute("width", "100%")
       svgEl.setAttribute("height", "100%")
       svgEl.style.display = "block"
-      svgEl.style.maxHeight = "340px"
+      svgEl.style.maxHeight = "580px"
+      svgEl.style.backgroundColor = "transparent"
+      svgEl.style.cursor = isDragging ? "grabbing" : "grab"
+
+      // Wrap SVG children in viewport <g> for zooming/panning
+      let viewport = svgEl.querySelector("#viewport") as SVGElement | null
+      if (!viewport) {
+        viewport = document.createElementNS("http://www.w3.org/2000/svg", "g") as SVGElement
+        viewport.setAttribute("id", "viewport")
+        while (svgEl.firstChild) {
+          viewport.appendChild(svgEl.firstChild)
+        }
+        svgEl.appendChild(viewport)
+      }
+      viewportRef.current = viewport
+
+      // Apply initial transform
+      viewport.setAttribute("transform", `translate(${panRef.current.x}, ${panRef.current.y}) scale(${zoomRef.current})`)
 
       const activeCountries = new Map<string, { name: string; clicks: number }>()
       if (countryBreakdown) {
@@ -53,30 +221,43 @@ const SvgContainer = memo(
       const clickValues = Array.from(activeCountries.values()).map((c) => c.clicks)
       const maxClicks = clickValues.length > 0 ? Math.max(...clickValues) : 1
 
-      // Select all path and group nodes with an explicit country ID
-      const paths = svgEl.querySelectorAll("[id]")
+      const paths = svgEl.querySelectorAll("path")
       const cleanups: (() => void)[] = []
 
       paths.forEach((el) => {
         const id = (el.getAttribute("id") || "").toLowerCase()
-        if (!id || id.startsWith("world-map")) return
+        if (!id) return
 
         const countryData = activeCountries.get(id)
         const clicks = countryData ? countryData.clicks : 0
 
-        // Highlight styled paths based on analytics traffic density
+        const htmlEl = el as SVGPathElement
+
+        // Highlight based on analytics clicks count
         if (clicks > 0) {
           const intensity = clicks / maxClicks
-          el.setAttribute("fill", `rgba(59, 130, 246, ${0.15 + intensity * 0.65})`)
-          el.setAttribute("stroke", "rgba(59, 130, 246, 0.9)")
+          const fillColor = `rgba(59, 130, 246, ${0.15 + intensity * 0.65})`
+          const strokeColor = "rgba(59, 130, 246, 0.9)"
+          
+          el.setAttribute("fill", fillColor)
+          el.setAttribute("stroke", strokeColor)
           el.setAttribute("stroke-width", "0.75")
-          ;(el as HTMLElement).style.cursor = "pointer"
-          ;(el as HTMLElement).style.transition = "fill 0.15s ease, stroke 0.15s ease"
+          
+          htmlEl.style.fill = fillColor
+          htmlEl.style.stroke = strokeColor
+          htmlEl.style.cursor = "pointer"
+          htmlEl.style.transition = "fill 0.15s ease, stroke 0.15s ease"
         } else {
-          el.setAttribute("fill", "rgba(31, 41, 55, 0.05)")
-          el.setAttribute("stroke", "rgba(107, 114, 128, 0.25)")
+          const fillColor = "rgba(107, 114, 128, 0.08)"
+          const strokeColor = "rgba(107, 114, 128, 0.25)"
+          
+          el.setAttribute("fill", fillColor)
+          el.setAttribute("stroke", strokeColor)
           el.setAttribute("stroke-width", "0.5")
-          ;(el as HTMLElement).style.transition = "fill 0.15s ease"
+          
+          htmlEl.style.fill = fillColor
+          htmlEl.style.stroke = strokeColor
+          htmlEl.style.transition = "fill 0.15s ease"
         }
 
         const handleMouseEnter = (e: MouseEvent) => {
@@ -86,7 +267,9 @@ const SvgContainer = memo(
           const x = e.clientX - parentRect.left + 16
           const y = e.clientY - parentRect.top - 12
 
-          const displayName = countryData ? countryData.name : id.toUpperCase()
+          const title = el.getAttribute("title") || id.toUpperCase()
+          const displayName = countryData ? countryData.name : title
+
           setHoveredCountry({
             name: displayName,
             clicks,
@@ -95,10 +278,10 @@ const SvgContainer = memo(
           })
 
           if (clicks > 0) {
-            el.setAttribute("fill", "rgba(59, 130, 246, 0.95)")
-            el.setAttribute("stroke", "rgba(96, 165, 250, 1)")
+            htmlEl.style.fill = "rgba(59, 130, 246, 0.95)"
+            htmlEl.style.stroke = "rgba(96, 165, 250, 1)"
           } else {
-            el.setAttribute("fill", "rgba(107, 114, 128, 0.15)")
+            htmlEl.style.fill = "rgba(107, 114, 128, 0.15)"
           }
         }
 
@@ -115,11 +298,12 @@ const SvgContainer = memo(
           setHoveredCountry(null)
           if (clicks > 0) {
             const intensity = clicks / maxClicks
-            el.setAttribute("fill", `rgba(59, 130, 246, ${0.15 + intensity * 0.65})`)
-            el.setAttribute("stroke", "rgba(59, 130, 246, 0.9)")
+            const fillColor = `rgba(59, 130, 246, ${0.15 + intensity * 0.65})`
+            htmlEl.style.fill = fillColor
+            htmlEl.style.stroke = "rgba(59, 130, 246, 0.9)"
           } else {
-            el.setAttribute("fill", "rgba(31, 41, 55, 0.05)")
-            el.setAttribute("stroke", "rgba(107, 114, 128, 0.25)")
+            htmlEl.style.fill = "rgba(107, 114, 128, 0.08)"
+            htmlEl.style.stroke = "rgba(107, 114, 128, 0.25)"
           }
         }
 
@@ -140,10 +324,41 @@ const SvgContainer = memo(
     }, [svgText, countryBreakdown])
 
     return (
-      <div
-        ref={containerRef}
-        className="w-full h-full flex items-center justify-center bg-card py-4"
-      />
+      <div className="w-full h-full relative overflow-hidden select-none touch-none">
+        <div
+          ref={containerRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          className="w-full h-[580px] flex items-center justify-center bg-card py-4"
+        />
+
+        {/* Zoom / Pan Controls Overlay */}
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1 z-10 select-none">
+          <button
+            onClick={zoomIn}
+            className="w-8 h-8 rounded-md border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-lg font-semibold flex items-center justify-center cursor-pointer select-none"
+            title="Zoom In"
+          >
+            +
+          </button>
+          <button
+            onClick={zoomOut}
+            className="w-8 h-8 rounded-md border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-lg font-semibold flex items-center justify-center cursor-pointer select-none"
+            title="Zoom Out"
+          >
+            -
+          </button>
+          <button
+            onClick={resetZoomPan}
+            className="w-8 h-8 rounded-md border border-border bg-popover/90 text-popover-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors text-sm flex items-center justify-center cursor-pointer select-none"
+            title="Reset View"
+          >
+            ⟲
+          </button>
+        </div>
+      </div>
     )
   },
   // Only trigger re-render if the core analytics statistics or SVG template changes
@@ -158,8 +373,6 @@ const SvgContainer = memo(
 SvgContainer.displayName = "SvgContainer"
 
 export function WorldMap({ countryBreakdown }: WorldMapProps) {
-  const [svgText, setSvgText] = useState<string>("")
-  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [hoveredCountry, setHoveredCountry] = useState<{
     name: string
     clicks: number
@@ -167,31 +380,10 @@ export function WorldMap({ countryBreakdown }: WorldMapProps) {
     y: number
   } | null>(null)
 
-  useEffect(() => {
-    fetch("/world-map.svg")
-      .then((res) => res.text())
-      .then((text) => {
-        setSvgText(text)
-        setIsLoading(false)
-      })
-      .catch((err) => {
-        console.error("Failed to load world map SVG", err)
-        setIsLoading(false)
-      })
-  }, [])
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[320px] items-center justify-center text-xs text-muted-foreground">
-        Loading interactive map...
-      </div>
-    )
-  }
-
   return (
     <div className="relative w-full h-full select-none overflow-hidden">
       <SvgContainer
-        svgText={svgText}
+        svgText={worldMapSvg}
         countryBreakdown={countryBreakdown}
         setHoveredCountry={setHoveredCountry}
       />

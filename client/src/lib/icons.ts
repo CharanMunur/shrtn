@@ -9,42 +9,52 @@ export const BROWSER_ICONS: Record<string, IconData> = {
   chrome: {
     label: "Google Chrome",
     color: "#4285F4",
-    url: `${SI_CDN}/googlechrome/4285F4`,
+    url: "/icons/chrome.svg",
   },
   firefox: {
     label: "Firefox",
     color: "#FF7139",
-    url: `${SI_CDN}/firefoxbrowser/FF7139`,
+    url: "/icons/firefox.svg",
   },
   safari: {
     label: "Safari",
     color: "#006CFF",
-    url: `${SI_CDN}/safari/006CFF`,
+    url: "/icons/safari.svg",
   },
   edge: {
     label: "Microsoft Edge",
     color: "#0078D7",
-    url: `${SI_CDN}/microsoftedge/0078D7`,
+    url: "/icons/edge.svg",
   },
   opera: {
     label: "Opera",
     color: "#FF1B2D",
-    url: `${SI_CDN}/opera/FF1B2D`,
+    url: "/icons/opera.svg",
   },
   brave: {
     label: "Brave",
     color: "#FB542B",
-    url: `${SI_CDN}/brave/FB542B`,
+    url: "/icons/brave.svg",
   },
   vivaldi: {
     label: "Vivaldi",
     color: "#EF3939",
-    url: `${SI_CDN}/vivaldi/EF3939`,
+    url: "/icons/vivaldi.svg",
   },
   samsung: {
     label: "Samsung Internet",
     color: "#1428A0",
-    url: `${SI_CDN}/samsung/1428A0`,
+    url: "/icons/samsung.svg",
+  },
+  whatsapp: {
+    label: "WhatsApp",
+    color: "#25D366",
+    url: "/icons/whatsapp.svg",
+  },
+  linkedin: {
+    label: "LinkedIn",
+    color: "#0A66C2",
+    url: "/icons/linkedin.svg",
   },
 }
 
@@ -52,22 +62,22 @@ export const OS_ICONS: Record<string, IconData> = {
   windows: {
     label: "Windows",
     color: "#0078D4",
-    url: `${SI_CDN}/windows/0078D4`,
+    url: "/icons/windows.svg",
   },
   macos: {
     label: "macOS",
     color: "#000000",
-    url: `${SI_CDN}/macos/555555`,
+    url: "/icons/macos.svg",
   },
   linux: {
     label: "Linux",
     color: "#FCC624",
-    url: `${SI_CDN}/linux/FCC624`,
+    url: "/icons/linux.svg",
   },
   android: {
     label: "Android",
     color: "#34A853",
-    url: `${SI_CDN}/android/34A853`,
+    url: "/icons/android.svg",
   },
   ubuntu: {
     label: "Ubuntu",
@@ -77,7 +87,7 @@ export const OS_ICONS: Record<string, IconData> = {
   ios: {
     label: "iOS",
     color: "#000000",
-    url: `${SI_CDN}/ios/555555`,
+    url: "/icons/ios.svg",
   },
   chromeos: {
     label: "ChromeOS",
@@ -96,6 +106,8 @@ export function getBrowserIcon(name: string): IconData | null {
   if (k.includes("brave")) return BROWSER_ICONS.brave
   if (k.includes("vivaldi")) return BROWSER_ICONS.vivaldi
   if (k.includes("samsung")) return BROWSER_ICONS.samsung
+  if (k.includes("whatsapp")) return BROWSER_ICONS.whatsapp
+  if (k.includes("linkedin")) return BROWSER_ICONS.linkedin
   return null
 }
 
@@ -125,7 +137,7 @@ const REFERRER_ICONS: Record<string, IconData> = {
   linkedin: {
     label: "LinkedIn",
     color: "#0A66C2",
-    url: `${SI_CDN}/linkedin/0A66C2`,
+    url: "/icons/linkedin.svg",
   },
   facebook: {
     label: "Facebook",
@@ -147,6 +159,11 @@ const REFERRER_ICONS: Record<string, IconData> = {
     color: "#E4405F",
     url: `${SI_CDN}/instagram/E4405F`,
   },
+  whatsapp: {
+    label: "WhatsApp",
+    color: "#25D366",
+    url: "/icons/whatsapp.svg",
+  },
 }
 
 export function getReferrerIcon(name: string): IconData | null {
@@ -158,6 +175,7 @@ export function getReferrerIcon(name: string): IconData | null {
   if (k.includes("google")) return REFERRER_ICONS.google
   if (k.includes("youtube")) return REFERRER_ICONS.youtube
   if (k.includes("instagram")) return REFERRER_ICONS.instagram
+  if (k.includes("whatsapp") || k.includes("wa.me")) return REFERRER_ICONS.whatsapp
   return null
 }
 

@@ -4,14 +4,18 @@ import { AuthProvider, useAuth } from "@/providers/auth-provider"
 import { AuthScreen } from "@/components/auth-screen"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { LandingPage } from "@/pages/LandingPage"
+import { OAuthCallback } from "@/pages/OAuthCallback"
 import { getApiBaseUrl } from "@/lib/env"
 import { Loader2 } from "lucide-react"
+
+import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
+        <Toaster />
       </AuthProvider>
     </BrowserRouter>
   )
@@ -43,6 +47,10 @@ function AppRoutes() {
       <Route
         path="/signup"
         element={token ? <Navigate to="/dashboard" replace /> : <AuthScreen initialTab="register" />}
+      />
+      <Route
+        path="/oauth/callback/:provider"
+        element={token ? <Navigate to="/dashboard" replace /> : <OAuthCallback />}
       />
 
       {/* Protected routes */}

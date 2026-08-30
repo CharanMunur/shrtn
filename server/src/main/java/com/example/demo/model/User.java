@@ -38,6 +38,17 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Builder.Default
+    @Column(name = "auth_provider")
+    private String provider = "LOCAL";
+
+    @Column(unique = true)
+    private String providerId;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    public String getProvider() {
+        return provider == null ? "LOCAL" : provider;
+    }
 }
