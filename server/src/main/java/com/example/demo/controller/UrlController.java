@@ -46,11 +46,14 @@ public class UrlController {
     private ResponseEntity<?> serveIndexHtml() {
         try {
             org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource("static/index.html");
-            byte[] bytes = resource.getInputStream().readAllBytes();
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(bytes);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("index.html not found");
-        }
+            if (resource.exists()) {
+                byte[] bytes = resource.getInputStream().readAllBytes();
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(bytes);
+            }
+        } catch (Exception ignored) {}
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(dashboardAppUrl))
+            .build();
     }
 
     private ResponseEntity<?> serveStaticResource(String filename) {
