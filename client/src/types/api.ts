@@ -39,6 +39,8 @@ export type UrlRequest = {
   customCode?: string
   expiresAt?: string
   password?: string
+  iosUrl?: string
+  androidUrl?: string
 }
 
 export type UrlResponse = {
@@ -52,6 +54,8 @@ export type UrlResponse = {
   isPasswordProtected?: boolean
   expiresAt: string
   createdAt?: string
+  iosUrl?: string
+  androidUrl?: string
 }
 
 export type UnlockRequest = {

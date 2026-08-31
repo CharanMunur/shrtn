@@ -14,6 +14,7 @@ import {
   X,
   SlidersHorizontal,
   Clock,
+  Smartphone,
 } from "lucide-react"
 import { useAuth } from "@/providers/auth-provider"
 import { createShortUrl, getUserUrls } from "@/lib/urls-api"
@@ -31,7 +32,9 @@ export function ShortenPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [expiryOption, setExpiryOption] = useState<"1" | "7" | "30" | "90">("30")
-  const [result, setResult] = useState<{ shortCode: string; shortUrl: string; expiresAt: string; isPasswordProtected?: boolean } | null>(null)
+  const [iosUrl, setIosUrl] = useState("")
+  const [androidUrl, setAndroidUrl] = useState("")
+  const [result, setResult] = useState<{ shortCode: string; shortUrl: string; expiresAt: string; isPasswordProtected?: boolean; iosUrl?: string; androidUrl?: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
@@ -76,6 +79,8 @@ export function ShortenPage() {
         customCode: customCode.trim() || undefined,
         expiresAt: expiresAtStr,
         password: password.trim() || undefined,
+        iosUrl: iosUrl.trim() || undefined,
+        androidUrl: androidUrl.trim() || undefined,
       }
 
       const data = await createShortUrl(payload, token!)
@@ -102,10 +107,14 @@ export function ShortenPage() {
         shortUrl,
         expiresAt: data.expiresAt,
         isPasswordProtected: !!password.trim(),
+        iosUrl: data.iosUrl,
+        androidUrl: data.androidUrl,
       })
       setUrlCount((c) => (c !== null ? c + 1 : c))
       setCustomCode("")
       setPassword("")
+      setIosUrl("")
+      setAndroidUrl("")
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to shorten URL.")
     } finally {
@@ -259,6 +268,45 @@ export function ShortenPage() {
               </div>
             </div>
 
+            {/* Smart Device Routing */}
+            <div className="space-y-3 mt-4 pt-4 border-t border-border/40">
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Smartphone className="h-3.5 w-3.5" />
+                1-Click Smart Device Routing (Optional)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="ios-url" className="text-xs font-medium text-muted-foreground">
+                    iOS Target URL (iPhone/iPad)
+                  </label>
+                  <input
+                    id="ios-url"
+                    type="url"
+                    placeholder="https://apps.apple.com/app/..."
+                    value={iosUrl}
+                    onChange={(e) => setIosUrl(e.target.value)}
+                    disabled={isLoading || atLimit}
+                    className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="android-url" className="text-xs font-medium text-muted-foreground">
+                    Android Target URL (Google Play)
+                  </label>
+                  <input
+                    id="android-url"
+                    type="url"
+                    placeholder="https://play.google.com/store/apps/..."
+                    value={androidUrl}
+                    onChange={(e) => setAndroidUrl(e.target.value)}
+                    disabled={isLoading || atLimit}
+                    className="w-full rounded-sm border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Password Protection */}
             <div className="space-y-1.5 mt-4">
               <label htmlFor="link-password" className="text-xs font-medium text-muted-foreground flex items-center justify-between">
@@ -323,11 +371,18 @@ export function ShortenPage() {
               <CheckCircle2 className="h-5 w-5 shrink-0" />
               <span>Your short link is live!</span>
             </div>
-            {result.isPasswordProtected && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-medium">
-                <Lock className="h-3 w-3" /> Protected
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {result.isPasswordProtected && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-medium">
+                  <Lock className="h-3 w-3" /> Protected
+                </span>
+              )}
+              {(result.iosUrl || result.androidUrl) && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-blue-500/10 text-blue-500 border border-blue-500/20 text-xs font-medium">
+                  <Smartphone className="h-3 w-3" /> Smart Device Route
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">

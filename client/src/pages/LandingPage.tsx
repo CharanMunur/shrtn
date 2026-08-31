@@ -5,6 +5,7 @@ import type { Variants } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/providers/theme-provider"
 import { useAuth } from "@/providers/auth-provider"
+import { getAppDashboardBaseUrl } from "@/lib/env"
 import {
   ArrowRight,
   ChevronDown,
@@ -133,6 +134,20 @@ export function LandingPage() {
   const nextFeatureTab =
     FEATURE_TABS[(activeFeatureTabIndex + 1) % FEATURE_TABS.length]
   
+  const appBase = getAppDashboardBaseUrl()
+
+  const goToSignIn = () => {
+    window.location.href = `${appBase}/signin`
+  }
+
+  const goToSignUp = () => {
+    window.location.href = `${appBase}/signup`
+  }
+
+  const goToDashboard = () => {
+    window.location.href = `${appBase}/dashboard`
+  }
+
   // Ensure the page starts at the top and force light mode
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -162,15 +177,15 @@ export function LandingPage() {
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-3">
             {token ? (
-              <Button className="px-[14px]" size="lg" onClick={() => navigate("/dashboard")}>
+              <Button className="px-[14px]" size="lg" onClick={goToDashboard}>
                 Dashboard
               </Button>
             ) : (
               <>
-                <Button className="px-[14px]" variant="outline" size="lg" onClick={() => navigate("/signin")}>
+                <Button className="px-[14px]" variant="outline" size="lg" onClick={goToSignIn}>
                   Sign in
                 </Button>
-                <Button className="px-[14px]" size="lg" onClick={() => navigate("/signup")}>
+                <Button className="px-[14px]" size="lg" onClick={goToSignUp}>
                   Create Account
                 </Button>
               </>
@@ -232,15 +247,15 @@ export function LandingPage() {
             
             <div className="flex flex-col gap-3">
               {token ? (
-                <Button className="w-full justify-center py-3" size="lg" onClick={() => { setIsMobileMenuOpen(false); navigate("/dashboard"); }}>
+                <Button className="w-full justify-center py-3" size="lg" onClick={() => { setIsMobileMenuOpen(false); goToDashboard(); }}>
                   Dashboard
                 </Button>
               ) : (
                 <>
-                  <Button className="w-full justify-center py-3" variant="outline" size="lg" onClick={() => { setIsMobileMenuOpen(false); navigate("/signin"); }}>
+                  <Button className="w-full justify-center py-3" variant="outline" size="lg" onClick={() => { setIsMobileMenuOpen(false); goToSignIn(); }}>
                     Sign in
                   </Button>
-                  <Button className="w-full justify-center py-3" size="lg" onClick={() => { setIsMobileMenuOpen(false); navigate("/signup"); }}>
+                  <Button className="w-full justify-center py-3" size="lg" onClick={() => { setIsMobileMenuOpen(false); goToSignUp(); }}>
                     Create Account
                   </Button>
                 </>
@@ -289,7 +304,7 @@ export function LandingPage() {
               variants={itemVariants}
               className="mt-10 flex items-center justify-center gap-4 flex-wrap"
             >
-              <Button className="px-[14px]" size="lg" onClick={() => navigate("/signup")}>
+              <Button className="px-[14px]" size="lg" onClick={goToSignUp}>
                 Start for free
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -612,7 +627,7 @@ export function LandingPage() {
             <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.1] tracking-tight text-[#1E1E1E]">
               Ready to simplify<br/>your links?
             </h2>
-            <Button className="mt-10 px-[14px]" size="lg" onClick={() => navigate("/signup")}>
+            <Button className="mt-10 px-[14px]" size="lg" onClick={goToSignUp}>
               Get Started Now <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -644,9 +659,9 @@ export function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-2 gap-x-8 gap-y-12 flex-[2] md:justify-end">
             <div className="flex flex-col gap-4">
               <h4 className="text-[14px] font-semibold text-white mb-2">Product</h4>
-              <button onClick={() => navigate("/dashboard")} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Dashboard</button>
-              <button onClick={() => navigate("/signin")} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Sign In</button>
-              <button onClick={() => navigate("/signup")} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Sign Up</button>
+              <button onClick={goToDashboard} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Dashboard</button>
+              <button onClick={goToSignIn} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Sign In</button>
+              <button onClick={goToSignUp} className="text-[14px] text-white/60 hover:text-white transition-colors text-left w-fit cursor-pointer">Sign Up</button>
             </div>
             <div className="flex flex-col gap-4">
               <h4 className="text-[14px] font-semibold text-white mb-2">Legal</h4>
