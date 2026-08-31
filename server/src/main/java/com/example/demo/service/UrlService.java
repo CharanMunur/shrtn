@@ -22,6 +22,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import ua_parser.Client;
 import ua_parser.Parser;
 
@@ -35,19 +36,22 @@ public class UrlService {
     private final StringRedisTemplate redisTemplate;
     private final AuthUtils authUtils;
     private final ObjectMapper objectMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UrlService(
         UrlRepository urlRepository,
         AuthUtils authUtils,
         ClickRepository clickRepository,
         StringRedisTemplate redisTemplate,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        PasswordEncoder passwordEncoder
     ) {
         this.urlRepository = urlRepository;
         this.authUtils = authUtils;
         this.clickRepository = clickRepository;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Creates a short URL for the authenticated user and stores the mapping in Postgres.
@@ -78,9 +82,10 @@ public class UrlService {
 
         String customCode = request.getCustomCode();
         String shortCode;
+        boolean hasCustomCode = customCode != null && !customCode.trim().isEmpty();
+        String trimmedCode = hasCustomCode ? customCode.trim() : null;
 
-        if (customCode != null && !customCode.trim().isEmpty()) {
-            String trimmedCode = customCode.trim();
+        if (hasCustomCode) {
             if (trimmedCode.length() < 3 || trimmedCode.length() > 30) {
                 throw new RuntimeException("Custom alias must be between 3 and 30 characters");
             }
@@ -96,7 +101,20 @@ public class UrlService {
             if (reserved.contains(trimmedCode.toLowerCase())) {
                 throw new RuntimeException("Custom alias is a reserved word");
             }
+        }
 
+        String rawPassword = request.getPassword();
+        String passwordHash = null;
+        if (rawPassword != null && !rawPassword.trim().isEmpty()) {
+            String trimmedPass = rawPassword.trim();
+            if (trimmedPass.length() < 3) {
+                throw new RuntimeException("Password must be at least 3 characters");
+            }
+            passwordHash = passwordEncoder.encode(trimmedPass);
+        }
+
+        Url savedUrl;
+        if (hasCustomCode) {
             shortCode = trimmedCode;
 
             Url url = Url.builder()
@@ -105,15 +123,17 @@ public class UrlService {
                 .user(user)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(expiresAt)
+                .passwordHash(passwordHash)
                 .build();
 
-            urlRepository.save(url);
+            savedUrl = urlRepository.save(url);
         } else {
             Url url = Url.builder()
                 .originalUrl(originalUrl)
                 .user(user)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(expiresAt)
+                .passwordHash(passwordHash)
                 .build();
 
             Url saved = urlRepository.save(url);
@@ -122,12 +142,13 @@ public class UrlService {
             shortCode = Base62Encoder.encode(id);
 
             saved.setShortCode(shortCode);
-            urlRepository.save(saved);
+            savedUrl = urlRepository.save(saved);
         }
 
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
-        return new UrlResponse(shortCode, originalUrl, 0, true, false, expiresAt);
+        boolean isProtected = passwordHash != null;
+        return new UrlResponse(shortCode, originalUrl, 0, true, false, isProtected, expiresAt, savedUrl.getCreatedAt());
     }
 
     // Resolves a short code to its destination URL, preferring Redis before falling back to DB.
@@ -148,8 +169,11 @@ public class UrlService {
             if (!cachedEntry.isActive()) {
                 throw new RuntimeException("This link is disabled");
             }
-            if (cachedEntry.expiresAt().isBefore(LocalDateTime.now())) {
+            if (cachedEntry.expiresAt() != null && cachedEntry.expiresAt().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException("This link has expired");
+            }
+            if (cachedEntry.isPasswordProtected()) {
+                throw new RuntimeException("Password required for this link");
             }
 
             originalUrl = cachedEntry.originalUrl();
@@ -163,15 +187,19 @@ public class UrlService {
             if (!url.isActive()) {
                 throw new RuntimeException("This link is disabled");
             }
-            if (url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException("This link has expired");
+            }
+
+            cacheUrl(cacheKey, url);
+
+            if (url.getPasswordHash() != null && !url.getPasswordHash().trim().isEmpty()) {
+                throw new RuntimeException("Password required for this link");
             }
 
             originalUrl = url.getOriginalUrl();
             urlId = url.getId();
             ownerUserId = url.getUser().getId();
-
-            cacheUrl(cacheKey, url);
         }
 
         Click click = Click.builder()
@@ -186,10 +214,8 @@ public class UrlService {
         Click savedClick = clickRepository.save(click);
 
         // Always evict analytics cache immediately so that dashboard click counts update in real-time.
-        // The background resolver will evict again once geolocation breakdowns are finalized.
         redisTemplate.delete("analytics:" + shortCode);
 
-        // Always run the background resolver to fetch precise city and region data (since proxy headers only provide country)
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             resolveCountry(savedClick.getId(), ipAddress, shortCode);
         });
@@ -201,14 +227,59 @@ public class UrlService {
         return originalUrl;
     }
 
+    // Unlocks a password-protected link, verifies password, records click analytics, and returns original URL.
+    @Transactional
+    public String unlockUrl(String shortCode, String rawPassword, String ipAddress, String userAgent, String referrer, String country) {
+        Url url = urlRepository
+            .findByShortCode(shortCode)
+            .orElseThrow(() -> new RuntimeException("Short code not found"));
+
+        if (!url.isActive()) {
+            throw new RuntimeException("This link is disabled");
+        }
+        if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("This link has expired");
+        }
+        if (url.getPasswordHash() == null || url.getPasswordHash().trim().isEmpty()) {
+            return url.getOriginalUrl();
+        }
+        if (rawPassword == null || !passwordEncoder.matches(rawPassword.trim(), url.getPasswordHash())) {
+            throw new RuntimeException("Incorrect password");
+        }
+
+        Click click = Click.builder()
+            .url(url)
+            .clickedAt(LocalDateTime.now())
+            .ipAddress(ipAddress)
+            .userAgent(userAgent)
+            .referrer(referrer)
+            .country(country)
+            .build();
+
+        Click savedClick = clickRepository.save(click);
+        redisTemplate.delete("analytics:" + shortCode);
+
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            resolveCountry(savedClick.getId(), ipAddress, shortCode);
+        });
+
+        if (url.getUser() != null) {
+            redisTemplate.delete(userUrlsCacheKey(url.getUser().getId()));
+        }
+
+        return url.getOriginalUrl();
+    }
+
     // Stores a lightweight URL snapshot in Redis so redirects can avoid a DB lookup on cache hits.
     private void cacheUrl(String cacheKey, Url url) {
         try {
+            boolean isProtected = url.getPasswordHash() != null && !url.getPasswordHash().trim().isEmpty();
             UrlCacheEntry entry = new UrlCacheEntry(
                 url.getId(),
                 url.getUser().getId(),
                 url.getOriginalUrl(),
                 url.isActive(),
+                isProtected,
                 url.getExpiresAt()
             );
             redisTemplate
@@ -262,7 +333,9 @@ public class UrlService {
                     clickCounts.getOrDefault(url.getId(), 0L),
                     url.isActive(),
                     url.isHasQrCode(),
-                    url.getExpiresAt()
+                    url.getPasswordHash() != null && !url.getPasswordHash().trim().isEmpty(),
+                    url.getExpiresAt(),
+                    url.getCreatedAt()
                 )
             )
             .toList();

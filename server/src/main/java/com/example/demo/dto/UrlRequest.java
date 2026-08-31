@@ -10,4 +10,5 @@ public class UrlRequest {
     private String originalUrl;
     private String customCode;
     private LocalDateTime expiresAt;
+    private String password;
 }

@@ -7,5 +7,6 @@ public record UrlCacheEntry(
     Long userId,
     String originalUrl,
     boolean isActive,
+    boolean isPasswordProtected,
     LocalDateTime expiresAt
 ) {}

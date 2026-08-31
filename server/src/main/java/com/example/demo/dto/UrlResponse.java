@@ -5,18 +5,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class UrlResponse {
-    @Getter
     private String shortCode;
-
-    @Getter
     private String originalUrl;
-    
-    @Getter
     private long totalClicks;
     
     @Getter(onMethod_ = {@JsonProperty("isActive")})
@@ -24,7 +22,10 @@ public class UrlResponse {
 
     @Getter(onMethod_ = {@JsonProperty("hasQrCode")})
     private boolean hasQrCode;
+
+    @Getter(onMethod_ = {@JsonProperty("isPasswordProtected")})
+    private boolean isPasswordProtected;
     
-    @Getter
     private LocalDateTime expiresAt;
+    private LocalDateTime createdAt;
 }

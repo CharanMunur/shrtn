@@ -53,4 +53,7 @@ public class Url {
     private boolean hasQrCode = false;
 
     private LocalDateTime expiresAt;
+
+    @Column(length = 255)
+    private String passwordHash;
 }

@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/urls/**", "/shorten").authenticated()
-                .requestMatchers("/{shortCode}").permitAll() // Allow redirect without auth
+                .requestMatchers("/{shortCode}", "/{shortCode}/unlock").permitAll() // Allow redirect and unlock without auth
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
