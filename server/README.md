@@ -1,6 +1,6 @@
 # Shrtn Server — Spring Boot API Backend
 
-The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun` — handles short-link redirects, click analytics, user auth, and OTP emails.
+The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun` — handles short-link redirects, 1-Click Smart Device Routing, click analytics, static Landing Page serving, user auth, and OTP emails.
 
 ---
 
@@ -20,9 +20,17 @@ The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun
 
 ## System Components
 
+### `controller/UrlController.java`
+- Serves static Landing Page (`index.html`) on `GET /`
+- Serves static vector assets (`logo.svg`, `world-map.svg`, `.js`, `.css`, `.ico`) with correct MIME types
+- Handles 302 redirects for `/signin`, `/signup`, and `/dashboard/**` to `https://app.shrtn.fun`
+- Executes shortcode redirects `GET /{code}` and dynamic QR Code generation (`?format=qr`)
+- Redirects deleted, disabled, or expired links to `/` (root Landing Page) via HTTP 302
+
 ### `service/UrlService.java`
 - Generates Base62 short codes from auto-incremented PostgreSQL IDs
-- On redirect: checks Redis → falls back to DB → caches the full URL snapshot → logs the click in Postgres
+- **1-Click Smart Device Routing**: Evaluates visitor `User-Agent` via `ua-parser` to route iOS visitors to `iosUrl`, Android visitors to `androidUrl`, and Desktop visitors to `originalUrl`
+- On redirect: checks Redis → falls back to DB → caches the full URL snapshot → logs click in Postgres
 - Caches `UrlCacheEntry` for redirect hot-path data and `UrlResponse[]` for per-user list views
 - Evicts Redis keys on click, toggle, delete, and shorten where relevant
 
@@ -45,7 +53,7 @@ The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun
 
 | Key | Value | TTL | Eviction trigger |
 |---|---|---|---|
-| `url:{shortCode}` | Serialized `UrlCacheEntry` (`id`, `userId`, `originalUrl`, `isActive`, `expiresAt`) | 24h | Toggle off / Delete |
+| `url:{shortCode}` | Serialized `UrlCacheEntry` (`id`, `userId`, `originalUrl`, `iosUrl`, `androidUrl`, `isActive`, `expiresAt`) | 24h | Toggle off / Delete |
 | `urls:{userId}` | Serialized `UrlResponse[]` for My Links / dashboard counts | Short TTL | Click / Shorten / Toggle / Delete |
 | `analytics:{shortCode}` | Serialized analytics object | Until evicted | New click (evicted instantly in main thread + background resolver) / Delete |
 
@@ -54,6 +62,16 @@ The backend for [Shrtn](https://shrtn.fun). Deployed on **Render** at `shrtn.fun
 ## API Endpoints
 
 All protected routes require `Authorization: Bearer <JWT_TOKEN>`.
+
+### Public & Route Redirections
+
+| Method | Path | Description | Result |
+|---|---|---|---|
+| `GET` | `/` | Serves public Landing Page | `200 OK` HTML |
+| `GET` | `/signin` / `/login` | Redirect to Sign In | `302 Found` ➔ `https://app.shrtn.fun/signin` |
+| `GET` | `/signup` / `/register` | Redirect to Sign Up | `302 Found` ➔ `https://app.shrtn.fun/signup` |
+| `GET` | `/dashboard/**` | Redirect to Dashboard | `302 Found` ➔ `https://app.shrtn.fun/dashboard` |
+| `GET` | `/{code}` | Short link redirect (or QR PNG if `?format=qr`) | `302 Found` to target URL / `/` if deleted |
 
 ### Auth — `/api/v1/auth`
 
@@ -76,14 +94,13 @@ All protected routes require `Authorization: Bearer <JWT_TOKEN>`.
 
 | Method | Path | Description | Auth |
 |---|---|---|---|
-| `POST` | `/shorten` | Create short link (max 25/user) | Yes |
+| `POST` | `/shorten` | Create short link with optional `iosUrl` / `androidUrl` | Yes |
 | `GET` | `/urls` | List user's links | Yes |
 | `PATCH` | `/urls/{code}/toggle` | Enable / disable link | Yes |
 | `DELETE` | `/urls/{code}` | Delete link + logs + cache | Yes |
 | `GET` | `/urls/{code}/analytics` | Click analytics | Yes |
 | `POST` | `/urls/{code}/qr` | Generate QR Code state | Yes |
 | `DELETE` | `/urls/{code}/qr` | Revoke/disable QR Code state | Yes |
-| `GET` | `/{code}` | Public redirect (302) OR raw PNG QR image (if `?format=qr`) | No |
 
 ---
 
@@ -101,23 +118,20 @@ REDIS_PASSWORD=      # Upstash Redis password
 JWT_SECRET=          # HMAC-SHA256 key (min 32 chars)
 RESEND_API_KEY=      # Resend API key (re_...)
 CORS_ALLOWED_ORIGINS=https://app.shrtn.fun
+APP_DASHBOARD_URL=https://app.shrtn.fun
 ```
 
 `application.properties` reads all values from env — no hardcoded secrets.
 
 ---
 
-## Running Locally
+## Running Locally & Gradle Integration
 
 ```bash
 cd server
 cp .env.example .env   # fill in values
-./gradlew bootRun      # starts on :8080
+./gradlew bootRun      # builds frontend, copies dist to static, and starts on :8080
 ```
-
-## Dockerfile
-
-A `Dockerfile` is included for containerised deployments. Render uses it directly via the `Dockerfile` at the repo root (server directory).
 
 ---
 
@@ -134,6 +148,8 @@ urls
   id            bigint PK
   short_code    varchar(255) UNIQUE
   original_url  varchar(2048)
+  ios_url       varchar(2048) NULLABLE
+  android_url   varchar(2048) NULLABLE
   created_at    timestamp
   expires_at    timestamp
   is_active     boolean
