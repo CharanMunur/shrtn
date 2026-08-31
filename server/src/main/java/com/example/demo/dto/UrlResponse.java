@@ -28,4 +28,6 @@ public class UrlResponse {
     
     private LocalDateTime expiresAt;
     private LocalDateTime createdAt;
+    private String iosUrl;
+    private String androidUrl;
 }

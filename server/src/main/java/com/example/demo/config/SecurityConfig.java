@@ -42,11 +42,27 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/assets/**",
+                    "/icons/**",
+                    "/*.svg",
+                    "/*.ico",
+                    "/*.png",
+                    "/*.json",
+                    "/*.css",
+                    "/*.js",
+                    "/signin",
+                    "/signup",
+                    "/dashboard/**",
+                    "/oauth/**"
+                ).permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/urls/**", "/shorten").authenticated()
-                .requestMatchers("/{shortCode}", "/{shortCode}/unlock").permitAll() // Allow redirect and unlock without auth
-                .anyRequest().authenticated()
+                .requestMatchers("/{shortCode}", "/{shortCode}/unlock").permitAll()
+                .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

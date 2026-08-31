@@ -113,6 +113,9 @@ public class UrlService {
             passwordHash = passwordEncoder.encode(trimmedPass);
         }
 
+        String iosUrl = request.getIosUrl() != null && !request.getIosUrl().trim().isEmpty() ? request.getIosUrl().trim() : null;
+        String androidUrl = request.getAndroidUrl() != null && !request.getAndroidUrl().trim().isEmpty() ? request.getAndroidUrl().trim() : null;
+
         Url savedUrl;
         if (hasCustomCode) {
             shortCode = trimmedCode;
@@ -124,6 +127,8 @@ public class UrlService {
                 .createdAt(LocalDateTime.now())
                 .expiresAt(expiresAt)
                 .passwordHash(passwordHash)
+                .iosUrl(iosUrl)
+                .androidUrl(androidUrl)
                 .build();
 
             savedUrl = urlRepository.save(url);
@@ -134,6 +139,8 @@ public class UrlService {
                 .createdAt(LocalDateTime.now())
                 .expiresAt(expiresAt)
                 .passwordHash(passwordHash)
+                .iosUrl(iosUrl)
+                .androidUrl(androidUrl)
                 .build();
 
             Url saved = urlRepository.save(url);
@@ -148,7 +155,27 @@ public class UrlService {
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
         boolean isProtected = passwordHash != null;
-        return new UrlResponse(shortCode, originalUrl, 0, true, false, isProtected, expiresAt, savedUrl.getCreatedAt());
+        return new UrlResponse(shortCode, originalUrl, 0, true, false, isProtected, expiresAt, savedUrl.getCreatedAt(), iosUrl, androidUrl);
+    }
+
+    private String resolveTargetUrl(String originalUrl, String iosUrl, String androidUrl, String userAgent) {
+        if (userAgent != null && !userAgent.isBlank()) {
+            try {
+                Client client = USER_AGENT_PARSER.parse(userAgent);
+                if (client != null && client.os != null && client.os.family != null) {
+                    String os = client.os.family.toLowerCase();
+                    if ((os.contains("ios") || os.contains("iphone") || os.contains("ipad") || os.contains("ipod"))
+                            && iosUrl != null && !iosUrl.isBlank()) {
+                        return iosUrl;
+                    }
+                    if (os.contains("android") && androidUrl != null && !androidUrl.isBlank()) {
+                        return androidUrl;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return originalUrl;
     }
 
     // Resolves a short code to its destination URL, preferring Redis before falling back to DB.
@@ -161,7 +188,7 @@ public class UrlService {
             cachedEntry = readCacheEntry(cachedJson);
         }
 
-        String originalUrl;
+        String targetUrl;
         Long urlId;
         Long ownerUserId;
 
@@ -176,7 +203,7 @@ public class UrlService {
                 throw new RuntimeException("Password required for this link");
             }
 
-            originalUrl = cachedEntry.originalUrl();
+            targetUrl = resolveTargetUrl(cachedEntry.originalUrl(), cachedEntry.iosUrl(), cachedEntry.androidUrl(), userAgent);
             urlId = cachedEntry.id();
             ownerUserId = cachedEntry.userId();
         } else {
@@ -197,7 +224,7 @@ public class UrlService {
                 throw new RuntimeException("Password required for this link");
             }
 
-            originalUrl = url.getOriginalUrl();
+            targetUrl = resolveTargetUrl(url.getOriginalUrl(), url.getIosUrl(), url.getAndroidUrl(), userAgent);
             urlId = url.getId();
             ownerUserId = url.getUser().getId();
         }
@@ -224,7 +251,7 @@ public class UrlService {
             redisTemplate.delete(userUrlsCacheKey(ownerUserId));
         }
 
-        return originalUrl;
+        return targetUrl;
     }
 
     // Unlocks a password-protected link, verifies password, records click analytics, and returns original URL.
@@ -241,7 +268,7 @@ public class UrlService {
             throw new RuntimeException("This link has expired");
         }
         if (url.getPasswordHash() == null || url.getPasswordHash().trim().isEmpty()) {
-            return url.getOriginalUrl();
+            return resolveTargetUrl(url.getOriginalUrl(), url.getIosUrl(), url.getAndroidUrl(), userAgent);
         }
         if (rawPassword == null || !passwordEncoder.matches(rawPassword.trim(), url.getPasswordHash())) {
             throw new RuntimeException("Incorrect password");
@@ -267,7 +294,7 @@ public class UrlService {
             redisTemplate.delete(userUrlsCacheKey(url.getUser().getId()));
         }
 
-        return url.getOriginalUrl();
+        return resolveTargetUrl(url.getOriginalUrl(), url.getIosUrl(), url.getAndroidUrl(), userAgent);
     }
 
     // Stores a lightweight URL snapshot in Redis so redirects can avoid a DB lookup on cache hits.
@@ -278,6 +305,8 @@ public class UrlService {
                 url.getId(),
                 url.getUser().getId(),
                 url.getOriginalUrl(),
+                url.getIosUrl(),
+                url.getAndroidUrl(),
                 url.isActive(),
                 isProtected,
                 url.getExpiresAt()
@@ -335,7 +364,9 @@ public class UrlService {
                     url.isHasQrCode(),
                     url.getPasswordHash() != null && !url.getPasswordHash().trim().isEmpty(),
                     url.getExpiresAt(),
-                    url.getCreatedAt()
+                    url.getCreatedAt(),
+                    url.getIosUrl(),
+                    url.getAndroidUrl()
                 )
             )
             .toList();

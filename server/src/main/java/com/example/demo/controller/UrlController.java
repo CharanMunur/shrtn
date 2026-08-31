@@ -22,10 +22,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class UrlController {
+
+    @Value("${app.frontend.dashboard-url:https://app.shrtn.fun}")
+    private String dashboardAppUrl;
 
     private final UrlService urlService;
     private final QrService qrService;
@@ -33,6 +37,74 @@ public class UrlController {
     public UrlController(UrlService urlService, QrService qrService) {
         this.urlService = urlService;
         this.qrService = qrService;
+    }
+
+    private static final java.util.Set<String> SPA_ROUTES = java.util.Set.of(
+        "oauth", "assets", "icons", "favicon.ico", "favicon.svg", "logo.svg", "world-map.svg", "icons.svg", "index.html"
+    );
+
+    private ResponseEntity<?> serveIndexHtml() {
+        try {
+            org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource("static/index.html");
+            byte[] bytes = resource.getInputStream().readAllBytes();
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(bytes);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("index.html not found");
+        }
+    }
+
+    private ResponseEntity<?> serveStaticResource(String filename) {
+        try {
+            org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource("static/" + filename);
+            if (resource.exists()) {
+                byte[] bytes = resource.getInputStream().readAllBytes();
+                MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+                String lower = filename.toLowerCase();
+                if (lower.endsWith(".svg")) {
+                    mediaType = MediaType.parseMediaType("image/svg+xml");
+                } else if (lower.endsWith(".png")) {
+                    mediaType = MediaType.IMAGE_PNG;
+                } else if (lower.endsWith(".ico")) {
+                    mediaType = MediaType.parseMediaType("image/x-icon");
+                } else if (lower.endsWith(".js")) {
+                    mediaType = MediaType.parseMediaType("application/javascript");
+                } else if (lower.endsWith(".css")) {
+                    mediaType = MediaType.parseMediaType("text/css");
+                } else if (lower.endsWith(".json")) {
+                    mediaType = MediaType.APPLICATION_JSON;
+                } else if (lower.endsWith(".html")) {
+                    mediaType = MediaType.TEXT_HTML;
+                }
+                return ResponseEntity.ok().contentType(mediaType).body(bytes);
+            }
+        } catch (Exception ignored) {}
+        return serveIndexHtml();
+    }
+
+    @GetMapping("/")
+    public ResponseEntity<?> serveRoot() {
+        return serveIndexHtml();
+    }
+
+    @GetMapping({"/signin", "/login"})
+    public ResponseEntity<Void> redirectToSignIn() {
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(dashboardAppUrl + "/signin"))
+            .build();
+    }
+
+    @GetMapping({"/signup", "/register"})
+    public ResponseEntity<Void> redirectToSignUp() {
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(dashboardAppUrl + "/signup"))
+            .build();
+    }
+
+    @GetMapping("/dashboard/**")
+    public ResponseEntity<Void> redirectToDashboard() {
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(dashboardAppUrl + "/dashboard"))
+            .build();
     }
 
     @PostMapping("/shorten")
@@ -46,6 +118,13 @@ public class UrlController {
         @RequestParam(required = false) String format,
         HttpServletRequest request
     ) {
+        if (shortCode.contains(".")) {
+            return serveStaticResource(shortCode);
+        }
+        if (SPA_ROUTES.contains(shortCode.toLowerCase())) {
+            return serveIndexHtml();
+        }
+
         if ("qr".equals(format)) {
             if (!urlService.existsAndActive(shortCode)) {
                 throw new RuntimeException("Short code not found or inactive");
@@ -93,6 +172,10 @@ public class UrlController {
             if ("Password required for this link".equals(e.getMessage())) {
                 String html = getPasswordUnlockHtml(shortCode);
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+            }
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("not found") || msg.contains("disabled") || msg.contains("expired"))) {
+                return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/")).build();
             }
             throw e;
         }

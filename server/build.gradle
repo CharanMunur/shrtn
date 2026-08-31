@@ -37,3 +37,12 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register('copyFrontend', Copy) {
+	from '../client/dist'
+	into 'src/main/resources/static'
+}
+
+tasks.named('processResources') {
+	dependsOn 'copyFrontend'
+}

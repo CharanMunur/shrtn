@@ -54,6 +54,12 @@ public class Url {
 
     private LocalDateTime expiresAt;
 
+    @Column(length = 2048)
+    private String iosUrl;
+
+    @Column(length = 2048)
+    private String androidUrl;
+
     @Column(length = 255)
     private String passwordHash;
 }

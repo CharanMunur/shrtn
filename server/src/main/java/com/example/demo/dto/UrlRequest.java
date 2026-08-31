@@ -11,4 +11,6 @@ public class UrlRequest {
     private String customCode;
     private LocalDateTime expiresAt;
     private String password;
+    private String iosUrl;
+    private String androidUrl;
 }
