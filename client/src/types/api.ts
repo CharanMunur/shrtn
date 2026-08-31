@@ -38,6 +38,7 @@ export type UrlRequest = {
   originalUrl: string
   customCode?: string
   expiresAt?: string
+  password?: string
 }
 
 export type UrlResponse = {
@@ -48,7 +49,17 @@ export type UrlResponse = {
   isActive: boolean
   active?: boolean
   hasQrCode?: boolean
+  isPasswordProtected?: boolean
   expiresAt: string
+  createdAt?: string
+}
+
+export type UnlockRequest = {
+  password: string
+}
+
+export type UnlockResponse = {
+  targetUrl: string
 }
 
 export type ClickDetailDTO = {

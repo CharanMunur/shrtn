@@ -12,7 +12,6 @@ import {
   Globe2,
   Monitor,
   Clock,
-  ChevronDown,
   Link2,
   BarChart3,
   Smartphone,
@@ -20,7 +19,16 @@ import {
   MapPin,
   Maximize2,
   X,
+  Copy,
+  ExternalLink,
+  Check,
 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
   ChartContainer,
@@ -51,6 +59,15 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
   const [tabGroup2, setTabGroup2] = useState<"browsers" | "os" | "devices">("browsers")
   const [tabGroup3, setTabGroup3] = useState<"countries" | "regions" | "cities">("countries")
   const [expandedTab, setExpandedTab] = useState<"browsers" | "os" | "devices" | "countries" | "regions" | "cities" | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyShortUrl = () => {
+    if (!analytics) return
+    const fullUrl = `${window.location.origin}/${analytics.shortCode}`
+    navigator.clipboard.writeText(fullUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const chartData = useMemo(() => {
     if (!analytics?.clicksByDate) return []
@@ -161,34 +178,11 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
   return (
     <div className="space-y-6 py-8 w-full">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Detailed click insights for your short links.
-          </p>
-        </div>
-
-        {/* URL selector */}
-        {!isLoading && urls.length > 0 && (
-          <div className="relative">
-            <select
-              id="url-select"
-              value={selectedCode}
-              onChange={(e) => navigate(`/dashboard/analytics/${e.target.value}`)}
-              className="appearance-none rounded-sm border border-border bg-card px-4 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-            >
-              {urls.map((u) => {
-                return (
-                  <option key={u.shortCode} value={u.shortCode}>
-                    /{u.shortCode}
-                  </option>
-                )
-              })}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          </div>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Detailed click insights for your short links.
+        </p>
       </div>
 
       {error && (
@@ -207,51 +201,125 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Link info card */}
-          <div className="rounded-sm border border-border bg-card px-5 py-4 overflow-hidden">
-            <div className="flex items-start gap-3 w-full min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary">
-                <Link2 className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-base font-bold text-primary">
-                    /{analytics.shortCode}
-                  </span>
-                  <span className="text-xs text-muted-foreground">short link</span>
-                </div>
-                {analytics.originalUrl && (
-                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed break-all">
-                    {analytics.originalUrl}
-                  </p>
+          <div className="rounded-sm border border-border/60 bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                {!isLoading && urls.length > 0 ? (
+                  <Select
+                    value={selectedCode}
+                    onValueChange={(val) => {
+                      if (val) navigate(`/dashboard/analytics/${val}`)
+                    }}
+                  >
+                    <SelectTrigger className="h-10 px-3.5 bg-muted/20 border-border/60 rounded-sm text-base font-mono font-bold text-primary hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="h-4.5 w-4.5 text-primary shrink-0" />
+                        <span>/{analytics.shortCode}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent align="start" className="bg-popover border border-border rounded-sm shadow-md">
+                      {urls.map((u) => (
+                        <SelectItem key={u.shortCode} value={u.shortCode} className="font-mono text-xs cursor-pointer">
+                          /{u.shortCode}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex items-center gap-2 font-mono text-base font-bold text-primary">
+                    <Link2 className="h-4.5 w-4.5 text-primary shrink-0" />
+                    <span>/{analytics.shortCode}</span>
+                  </div>
                 )}
               </div>
+
+              {analytics.originalUrl && (
+                <p className="text-sm text-muted-foreground font-mono truncate">
+                  <a
+                    href={analytics.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground hover:underline transition-colors truncate"
+                  >
+                    {analytics.originalUrl}
+                  </a>
+                </p>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              <button
+                type="button"
+                onClick={handleCopyShortUrl}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-sm border border-border/60 bg-muted/20 hover:bg-muted text-foreground transition-colors cursor-pointer"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+              {analytics.originalUrl && (
+                <a
+                  href={analytics.originalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-sm border border-border/60 bg-muted/20 hover:bg-muted text-foreground transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Visit</span>
+                </a>
+              )}
             </div>
           </div>
 
           {/* Stat cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MetricCard
-              icon={<MousePointerClick className="h-4 w-4" />}
-              label="Total Clicks"
-              value={total.toLocaleString()}
-              highlight
-            />
-            <MetricCard
-              icon={<Globe2 className="h-4 w-4" />}
-              label="Browsers"
-              value={Object.keys(analytics.browserBreakdown ?? {}).length.toString()}
-            />
-            <MetricCard
-              icon={<Monitor className="h-4 w-4" />}
-              label="OS Types"
-              value={Object.keys(analytics.osBreakdown ?? {}).length.toString()}
-            />
-            <MetricCard
-              icon={<Clock className="h-4 w-4" />}
-              label="Recent Clicks"
-              value={(analytics.lastClicks?.length ?? 0).toString()}
-            />
-          </div>
+          {(() => {
+            const topCountry = countryEntries[0]
+            const topCountryPct = topCountry && total ? Math.round((topCountry[1] / total) * 100) : 0
+
+            const topBrowser = browserEntries[0]
+            const topBrowserPct = topBrowser && total ? Math.round((topBrowser[1] / total) * 100) : 0
+
+            const topOs = osEntries[0]
+            const topOsPct = topOs && total ? Math.round((topOs[1] / total) * 100) : 0
+
+            const lastClickObj = analytics.lastClicks && analytics.lastClicks.length > 0 ? analytics.lastClicks[0] : null
+            const lastClickRel = lastClickObj?.clickedAt ? formatRelativeTime(lastClickObj.clickedAt) : null
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <MetricCard
+                  icon={<MousePointerClick className="h-4 w-4" />}
+                  label="Total Clicks"
+                  value={total.toLocaleString()}
+                  subText="All clicks registered"
+                />
+                <MetricCard
+                  icon={<Globe2 className="h-4 w-4" />}
+                  label="Browsers"
+                  value={browserEntries.length.toString()}
+                  subText={topBrowser ? `Top: ${topBrowser[0]} (${topBrowserPct}%)` : "No browser data"}
+                />
+                <MetricCard
+                  icon={<Monitor className="h-4 w-4" />}
+                  label="OS Types"
+                  value={osEntries.length.toString()}
+                  subText={topOs ? `Top: ${topOs[0]} (${topOsPct}%)` : "No OS data"}
+                />
+                <MetricCard
+                  icon={<MapPin className="h-4 w-4" />}
+                  label="Countries"
+                  value={countryEntries.length.toString()}
+                  subText={topCountry ? `Top: ${topCountry[0]} (${topCountryPct}%)` : "No location data"}
+                />
+                <MetricCard
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Recent Clicks"
+                  value={(analytics.lastClicks?.length ?? 0).toString()}
+                  subText={lastClickRel ? `Latest: ${lastClickRel}` : "No recent activity"}
+                />
+              </div>
+            )
+          })()}
 
           {/* Clicks over time chart (Full Width) */}
           <div className="rounded-sm border border-border/60 bg-card p-5">
@@ -739,32 +807,32 @@ function MetricCard({
   icon,
   label,
   value,
-  highlight,
+  subText,
 }: {
   icon: React.ReactNode
   label: string
   value: string
-  highlight?: boolean
+  subText?: React.ReactNode
 }) {
   return (
-    <div
-      className={`rounded-sm border p-4 flex flex-col gap-2 ${
-        highlight
-          ? "border-primary/25 bg-primary/5"
-          : "border-border bg-card"
-      }`}
-    >
-      <div className={`flex items-center gap-1.5 text-xs font-medium ${
-        highlight ? "text-primary" : "text-muted-foreground"
-      }`}>
-        {icon}
-        {label}
+    <div className="rounded-sm border border-border/60 bg-card p-4 flex flex-col justify-between gap-3 hover:border-border transition-colors">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="p-1 rounded-sm bg-muted text-muted-foreground">
+          {icon}
+        </div>
+        <span>{label}</span>
       </div>
-      <p className={`text-2xl font-bold tabular-nums ${
-        highlight ? "text-primary" : "text-foreground"
-      }`}>
-        {value}
-      </p>
+
+      <div className="space-y-1">
+        <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+          {value}
+        </p>
+        {subText && (
+          <div className="text-xs text-muted-foreground font-normal truncate">
+            {subText}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -810,10 +878,6 @@ function BreakdownTable({
 
               return (
                 <div key={fullName} className="group relative px-5 py-2.5 hover:bg-muted/15 transition-colors overflow-hidden">
-                  <div 
-                    className="absolute inset-y-0 left-0 bg-primary/6 transition-all duration-500 ease-out pointer-events-none"
-                    style={{ width: `${totalPct}%` }}
-                  />
                   <div className="relative flex items-center gap-3">
                     {/* Icon */}
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center">

@@ -3,9 +3,9 @@ import { useNavigate, useLocation, Routes, Route, Navigate } from "react-router-
 import { motion } from "framer-motion"
 import {
   LayoutDashboard,
+  Link,
   Link2,
   BarChart2,
-  Scissors,
   LogOut,
   Settings,
   Sun,
@@ -37,7 +37,7 @@ type Page = "dashboard" | "shorten" | "links" | "analytics" | "settings" | "pers
 
 const NAV_ITEMS: { id: Exclude<Page, "settings" | "personal-info">; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { id: "shorten", label: "Shorten URL", icon: <Scissors className="h-4 w-4" /> },
+  { id: "shorten", label: "Shorten URL", icon: <Link className="h-4 w-4" /> },
   { id: "links", label: "My Links", icon: <Link2 className="h-4 w-4" /> },
   { id: "qrcodes", label: "QR Codes", icon: <QrCode className="h-4 w-4" /> },
   { id: "analytics", label: "Analytics", icon: <BarChart2 className="h-4 w-4" /> },

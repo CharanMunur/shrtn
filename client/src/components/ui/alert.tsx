@@ -15,7 +15,7 @@ function Alert({
       role="alert"
       data-slot="alert"
       className={cn(
-        "rounded-xl border px-4 py-3 text-sm",
+        "rounded-sm border px-4 py-3 text-sm",
         variant === "destructive"
           ? "border-destructive/20 bg-destructive/10 text-destructive"
           : "border-border/60 bg-muted/40 text-foreground",

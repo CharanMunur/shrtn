@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import {
   Copy,
   ExternalLink,
@@ -10,13 +10,22 @@ import {
   CheckCircle2,
   Clock,
   QrCode,
+  Search,
+  MousePointerClick,
+  Info,
+  Download,
+  FileSpreadsheet,
+  FileJson,
+  Calendar,
+  Lock,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/providers/auth-provider"
 import { getUserUrls, toggleUrl, deleteUrl } from "@/lib/urls-api"
 import { ApiError } from "@/lib/api"
-import { formatRelativeTime, enrichUrls, downloadQrCode, type EnrichedUrl } from "@/lib/url"
+import { formatDateTime, formatRelativeTime, enrichUrls, downloadQrCode, type EnrichedUrl } from "@/lib/url"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -32,22 +41,119 @@ interface MyLinksPageProps {
   onViewAnalytics: (shortCode: string) => void
 }
 
+function exportSingleLinkData(link: EnrichedUrl, format: "csv" | "json") {
+  const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date()
+  const status = link.isActive && !isExpired ? "Active" : isExpired ? "Expired" : "Disabled"
+
+  if (format === "json") {
+    const exportData = {
+      shortCode: link.shortCode,
+      shortUrl: link.shortUrl,
+      originalUrl: link.originalUrl,
+      createdAt: link.createdAt ? new Date(link.createdAt).toISOString() : null,
+      expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString() : null,
+      status,
+      totalClicks: link.totalClicks,
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2))
+    const dlAnchor = document.createElement("a")
+    dlAnchor.setAttribute("href", dataStr)
+    dlAnchor.setAttribute("download", `link-${link.shortCode}.json`)
+    document.body.appendChild(dlAnchor)
+    dlAnchor.click()
+    dlAnchor.remove()
+    toast.success(`Exported /${link.shortCode} data to JSON`)
+  } else {
+    const headers = ["Short Code", "Short URL", "Original URL", "Created At", "Expires At", "Status", "Total Clicks"]
+    const row = [
+      link.shortCode,
+      link.shortUrl,
+      `"${(link.originalUrl || "").replace(/"/g, '""')}"`,
+      link.createdAt ? new Date(link.createdAt).toISOString() : "",
+      link.expiresAt ? new Date(link.expiresAt).toISOString() : "Never",
+      status,
+      link.totalClicks,
+    ]
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent([headers.join(","), row.join(",")].join("\n"))
+    const dlAnchor = document.createElement("a")
+    dlAnchor.setAttribute("href", csvContent)
+    dlAnchor.setAttribute("download", `link-${link.shortCode}.csv`)
+    document.body.appendChild(dlAnchor)
+    dlAnchor.click()
+    dlAnchor.remove()
+    toast.success(`Exported /${link.shortCode} data to CSV`)
+  }
+}
+
+function exportAllLinksData(urlsList: EnrichedUrl[], format: "csv" | "json") {
+  if (urlsList.length === 0) return
+  if (format === "json") {
+    const exportData = urlsList.map((link) => {
+      const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date()
+      const status = link.isActive && !isExpired ? "Active" : isExpired ? "Expired" : "Disabled"
+      return {
+        shortCode: link.shortCode,
+        shortUrl: link.shortUrl,
+        originalUrl: link.originalUrl,
+        createdAt: link.createdAt ? new Date(link.createdAt).toISOString() : null,
+        expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString() : null,
+        status,
+        totalClicks: link.totalClicks,
+      }
+    })
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2))
+    const dlAnchor = document.createElement("a")
+    dlAnchor.setAttribute("href", dataStr)
+    dlAnchor.setAttribute("download", `all-links-${new Date().toISOString().slice(0, 10)}.json`)
+    document.body.appendChild(dlAnchor)
+    dlAnchor.click()
+    dlAnchor.remove()
+    toast.success("Exported all links to JSON")
+  } else {
+    const headers = ["Short Code", "Short URL", "Original URL", "Created At", "Expires At", "Status", "Total Clicks"]
+    const rows = urlsList.map((link) => {
+      const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date()
+      const status = link.isActive && !isExpired ? "Active" : isExpired ? "Expired" : "Disabled"
+      return [
+        link.shortCode,
+        link.shortUrl,
+        `"${(link.originalUrl || "").replace(/"/g, '""')}"`,
+        link.createdAt ? new Date(link.createdAt).toISOString() : "",
+        link.expiresAt ? new Date(link.expiresAt).toISOString() : "Never",
+        status,
+        link.totalClicks,
+      ].join(",")
+    })
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent([headers.join(","), ...rows].join("\n"))
+    const dlAnchor = document.createElement("a")
+    dlAnchor.setAttribute("href", csvContent)
+    dlAnchor.setAttribute("download", `all-links-${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(dlAnchor)
+    dlAnchor.click()
+    dlAnchor.remove()
+    toast.success("Exported all links to CSV")
+  }
+}
+
 export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
   const { token } = useAuth()
   const [urls, setUrls] = useState<EnrichedUrl[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expired">("all")
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
   const [togglingUrl, setTogglingUrl] = useState<string | null>(null)
   const [deletingUrl, setDeletingUrl] = useState<string | null>(null)
   const [confirmDeleteUrl, setConfirmDeleteUrl] = useState<string | null>(null)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [qrCodeCode, setQrCodeCode] = useState<string>("")
+  const [detailsLink, setDetailsLink] = useState<EnrichedUrl | null>(null)
 
   async function handleDownload(shortUrl: string, shortCode: string) {
     try {
       await downloadQrCode(shortUrl, shortCode)
-    } catch (err) {
+    } catch {
       toast.error("Failed to download QR code.")
     }
   }
@@ -106,6 +212,37 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
     setTimeout(() => setCopiedUrl(null), 2000)
   }
 
+  const activeCount = useMemo(() => {
+    return urls.filter((u) => {
+      const isExpired = u.expiresAt && new Date(u.expiresAt) < new Date()
+      return u.isActive && !isExpired
+    }).length
+  }, [urls])
+
+  const totalClicks = useMemo(() => {
+    return urls.reduce((sum, u) => sum + u.totalClicks, 0)
+  }, [urls])
+
+  const filteredUrls = useMemo(() => {
+    return urls.filter((u) => {
+      const isExpired = u.expiresAt && new Date(u.expiresAt) < new Date()
+      const isActive = u.isActive && !isExpired
+
+      if (statusFilter === "active" && !isActive) return false
+      if (statusFilter === "expired" && !isExpired) return false
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim()
+        const matchCode = u.shortCode.toLowerCase().includes(q)
+        const matchUrl = u.originalUrl?.toLowerCase().includes(q)
+        const matchShortUrl = u.shortUrl.toLowerCase().includes(q)
+        if (!matchCode && !matchUrl && !matchShortUrl) return false
+      }
+
+      return true
+    })
+  }, [urls, statusFilter, searchQuery])
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
@@ -118,26 +255,121 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
   return (
     <div className="space-y-6 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">My Links</h1>
           <p className="mt-1 text-muted-foreground text-sm">
-            Manage and monitor all your shortened URLs.
+            Manage, search, and monitor all your shortened URLs.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {urls.length > 0 && (
+            <button
+              type="button"
+              onClick={() => exportAllLinksData(urls, "csv")}
+              className="flex items-center gap-1.5 rounded-sm border border-border/60 bg-card px-3 py-2 text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+              title="Download all links data as CSV"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={load}
+            className="flex items-center gap-1.5 rounded-sm border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
         <div className="rounded-sm bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
           {error}
+        </div>
+      )}
+
+      {/* Summary Stat Strip */}
+      {urls.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-sm border border-border/60 bg-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Total Links</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{urls.length}</p>
+            </div>
+            <div className="p-2.5 rounded-sm bg-muted text-muted-foreground">
+              <Link2 className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="rounded-sm border border-border/60 bg-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Active Links</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{activeCount}</p>
+            </div>
+            <div className="p-2.5 rounded-sm bg-green-500/10 text-green-500 border border-green-500/20">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="rounded-sm border border-border/60 bg-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Total Clicks</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{totalClicks.toLocaleString()}</p>
+            </div>
+            <div className="p-2.5 rounded-sm bg-muted text-muted-foreground">
+              <MousePointerClick className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Controls: Search and Filter Tabs */}
+      {urls.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Search code or URL..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 text-xs bg-card border-border/60 h-9 rounded-sm"
+            />
+          </div>
+
+          <div className="flex items-center bg-muted/40 p-1 rounded-sm border border-border/50 self-start sm:self-auto">
+            <button
+              onClick={() => setStatusFilter("all")}
+              className={`px-3 py-1 text-xs font-medium rounded-sm transition-all cursor-pointer ${
+                statusFilter === "all"
+                  ? "bg-card text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              All ({urls.length})
+            </button>
+            <button
+              onClick={() => setStatusFilter("active")}
+              className={`px-3 py-1 text-xs font-medium rounded-sm transition-all cursor-pointer ${
+                statusFilter === "active"
+                  ? "bg-card text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Active ({activeCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter("expired")}
+              className={`px-3 py-1 text-xs font-medium rounded-sm transition-all cursor-pointer ${
+                statusFilter === "expired"
+                  ? "bg-card text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Expired ({urls.length - activeCount})
+            </button>
+          </div>
         </div>
       )}
 
@@ -153,38 +385,49 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
             </p>
           </div>
         </div>
+      ) : filteredUrls.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-sm border border-border bg-card py-16 gap-2 text-center">
+          <Search className="h-6 w-6 text-muted-foreground opacity-40" />
+          <p className="text-sm font-medium text-foreground">No links match your filter</p>
+          <p className="text-xs text-muted-foreground">Try searching for a different code or URL.</p>
+        </div>
       ) : (
-        <div className="rounded-sm border border-border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-sm border border-border/60 bg-card overflow-hidden shadow-xs">
           {/* Table header - desktop only */}
-          <div className="hidden md:grid md:grid-cols-[6rem_1fr_5rem_8.5rem_8rem_9.5rem] gap-4 px-5 py-3 border-b border-border bg-muted/40 text-sm font-semibold text-muted-foreground/80">
-            <div>Code</div>
-            <div>Short URL</div>
-            <div className="text-right pr-2">Clicks</div>
+          <div className="hidden md:grid md:grid-cols-[1fr_6rem_7.5rem_7.5rem_10rem] gap-4 px-5 py-3 border-b border-border bg-muted/30 text-xs font-semibold text-muted-foreground">
+            <div>Link Details</div>
+            <div className="text-right">Clicks</div>
             <div className="text-center">Status</div>
             <div>Expires</div>
-            <div>Actions</div>
+            <div className="text-right">Actions</div>
           </div>
 
           {/* Rows */}
-          <div className="divide-y divide-border">
-            {urls.map((url, i) => {
+          <div className="divide-y divide-border/60">
+            {filteredUrls.map((url, i) => {
               const isExpired = url.expiresAt && new Date(url.expiresAt) < new Date()
               const isActive = url.isActive && !isExpired
 
               return (
                 <div
                   key={`${url.shortUrl || url.shortCode || "link"}-${i}`}
-                  className="flex flex-col md:grid md:grid-cols-[6rem_1fr_5rem_8.5rem_8rem_9.5rem] gap-4 px-4 py-4 md:px-5 md:py-4 items-stretch md:items-center hover:bg-muted/20 transition-colors"
+                  className="flex flex-col md:grid md:grid-cols-[1fr_6rem_7.5rem_7.5rem_10rem] gap-4 px-4 py-4 md:px-5 md:py-3.5 items-stretch md:items-center hover:bg-muted/15 transition-colors"
                 >
                   {/* MOBILE CARD VIEW */}
                   <div className="md:hidden flex flex-col gap-3 w-full">
-                    {/* Header Row: Short code and Status */}
                     <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                      <span className="text-sm font-mono font-bold text-primary">
-                        /{url.shortCode || "—"}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-mono font-bold text-primary">
+                          /{url.shortCode || "—"}
+                        </span>
+                        {url.isPasswordProtected && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-medium" title="Password protected">
+                            <Lock className="h-3 w-3" />
+                            Protected
+                          </span>
+                        )}
+                      </div>
                       
-                      {/* Status toggle field */}
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={isActive}
@@ -195,51 +438,41 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                         {togglingUrl === url.shortUrl ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                         ) : isActive ? (
-                          <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                          <span className="text-xs font-semibold text-green-500">
                             Active
                           </span>
                         ) : (
                           <span className="text-xs font-medium text-muted-foreground">
-                            {isExpired ? "Expired" : "Off"}
+                            {isExpired ? "Expired" : "Disabled"}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Middle Info: Short URL and Original URL */}
-                    <div className="space-y-1.5">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">Short URL</span>
-                        <a
-                          href={url.shortUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-foreground font-medium hover:text-primary hover:underline flex items-center gap-1 mt-0.5"
-                        >
-                          {url.shortUrl}
-                          <ExternalLink className="h-3 w-3 shrink-0 opacity-60" />
-                        </a>
-                      </div>
+                    <div className="space-y-1">
+                      <a
+                        href={url.shortUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-mono font-semibold text-primary hover:underline flex items-center gap-1"
+                      >
+                        {url.shortUrl}
+                        <ExternalLink className="h-3 w-3 shrink-0 opacity-60" />
+                      </a>
 
                       {url.originalUrl && (
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">Dest URL</span>
-                          <p className="text-xs text-muted-foreground font-mono truncate max-w-full mt-0.5">
-                            {url.originalUrl}
-                          </p>
-                        </div>
+                        <p className="text-xs text-muted-foreground font-mono truncate max-w-full">
+                          {url.originalUrl}
+                        </p>
                       )}
                     </div>
 
-                    {/* Stats & Expiry row */}
                     <div className="flex items-center justify-between bg-muted/30 px-3 py-2 rounded-sm text-xs">
-                      {/* Clicks */}
                       <div className="flex items-center gap-1.5">
                         <span className="text-muted-foreground">Clicks:</span>
                         <span className="font-semibold text-foreground tabular-nums">{url.totalClicks.toLocaleString()}</span>
                       </div>
 
-                      {/* Expiry */}
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Clock className="h-3.5 w-3.5 shrink-0" />
                         <span>
@@ -247,13 +480,21 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                             ? isExpired
                               ? <span className="text-destructive font-medium">Expired</span>
                               : formatRelativeTime(url.expiresAt)
-                            : "No expiry"}
+                            : "Never"}
                         </span>
                       </div>
                     </div>
 
-                    {/* Bottom Actions Row */}
                     <div className="flex items-center justify-end gap-1 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setDetailsLink(url)}
+                        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-sm hover:bg-muted border border-border/50 cursor-pointer"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                        Details
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => onViewAnalytics(url.shortCode)}
@@ -305,32 +546,42 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                   </div>
 
                   {/* DESKTOP TABLE ROW VIEW */}
-                  {/* Short code */}
-                  <div className="hidden md:block shrink-0">
-                    <span className="text-sm font-mono font-bold text-primary">
-                      /{url.shortCode || "—"}
-                    </span>
-                  </div>
-
-                  {/* Short URL */}
-                  <div className="hidden md:block min-w-0 w-full">
-                    <a
-                      href={url.shortUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-foreground hover:underline block truncate"
-                    >
-                      {url.shortUrl}
-                    </a>
+                  {/* Link Details: Shortcode + Destination Stack */}
+                  <div className="hidden md:block min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-bold text-primary">
+                        /{url.shortCode || "—"}
+                      </span>
+                      {url.isPasswordProtected && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-medium" title="Password protected">
+                          <Lock className="h-3 w-3" />
+                          Protected
+                        </span>
+                      )}
+                    </div>
+                    {url.originalUrl && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono mt-0.5 truncate">
+                        <a
+                          href={url.originalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-foreground hover:underline truncate"
+                        >
+                          {url.originalUrl}
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {/* Clicks */}
-                  <div className="hidden md:block w-full md:w-auto md:text-right md:pr-2">
-                    <span className="text-sm font-semibold tabular-nums">{url.totalClicks.toLocaleString()}</span>
+                  <div className="hidden md:block text-right">
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      {url.totalClicks.toLocaleString()}
+                    </span>
                   </div>
 
                   {/* Status toggle field */}
-                  <div className="hidden md:flex md:justify-center items-center gap-2">
+                  <div className="hidden md:flex justify-center items-center gap-2">
                     <Switch
                       checked={isActive}
                       onCheckedChange={() => handleToggle(url)}
@@ -340,7 +591,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                     {togglingUrl === url.shortUrl ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                     ) : isActive ? (
-                      <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                      <span className="text-xs font-semibold text-green-500">
                         Active
                       </span>
                     ) : (
@@ -355,13 +606,17 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                     <Clock className="h-3 w-3 shrink-0" />
                     {url.expiresAt
                       ? isExpired
-                        ? <span className="text-destructive">Expired</span>
+                        ? <span className="text-destructive font-medium">Expired</span>
                         : formatRelativeTime(url.expiresAt)
-                      : "—"}
+                      : "Never"}
                   </div>
 
                   {/* Actions */}
-                  <div className="hidden md:flex items-center gap-1">
+                  <div className="hidden md:flex items-center justify-end gap-1">
+                    <IconBtn title="Link Details & Dates" onClick={() => setDetailsLink(url)}>
+                      <Info className="h-4 w-4" />
+                    </IconBtn>
+
                     <IconBtn title="View analytics" onClick={() => onViewAnalytics(url.shortCode)}>
                       <BarChart2 className="h-4 w-4" />
                     </IconBtn>
@@ -397,7 +652,7 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                     <IconBtn
                       title="Delete"
                       onClick={() => setConfirmDeleteUrl(url.shortUrl)}
-                      className="hover:bg-destructive/15 hover:text-destructive animate-in fade-in duration-200"
+                      className="hover:bg-destructive/15 hover:text-destructive transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </IconBtn>
@@ -411,9 +666,9 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
 
       {urls.length > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          {urls.length} link{urls.length !== 1 ? "s" : ""} ·{" "}
-          {urls.filter((u) => u.isActive).length} active ·{" "}
-          {urls.reduce((sum, u) => sum + u.totalClicks, 0).toLocaleString()} total clicks
+          Showing {filteredUrls.length} of {urls.length} link{urls.length !== 1 ? "s" : ""} ·{" "}
+          {activeCount} active ·{" "}
+          {totalClicks.toLocaleString()} total clicks
         </p>
       )}
 
@@ -459,6 +714,169 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                 "Delete Link"
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Details Modal */}
+      <Dialog open={detailsLink !== null} onOpenChange={(open) => { if (!open) setDetailsLink(null) }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold font-mono">
+              <Link2 className="h-5 w-5 text-primary" />
+              /{detailsLink?.shortCode} Details
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Complete metadata, timestamps, and export options for this link.
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailsLink && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-sm border border-border/60 bg-muted/20 p-3 space-y-2">
+                <div>
+                  <span className="text-xs font-semibold text-muted-foreground block">Short URL</span>
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <span className="text-xs font-mono font-semibold text-primary truncate">{detailsLink.shortUrl}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(detailsLink.shortUrl)}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0 cursor-pointer"
+                    >
+                      {copiedUrl === detailsLink.shortUrl ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{copiedUrl === detailsLink.shortUrl ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {detailsLink.originalUrl && (
+                  <div className="pt-2 border-t border-border/40">
+                    <span className="text-xs font-semibold text-muted-foreground block">Destination URL</span>
+                    <a
+                      href={detailsLink.originalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-mono text-muted-foreground hover:text-foreground hover:underline truncate block mt-0.5"
+                    >
+                      {detailsLink.originalUrl}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Metadata Grid */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-sm border border-border/60 bg-card p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span className="font-semibold text-xs">Created Date</span>
+                  </div>
+                  <p className="font-medium text-foreground">
+                    {detailsLink.createdAt ? formatDateTime(detailsLink.createdAt) : "—"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {detailsLink.createdAt ? formatRelativeTime(detailsLink.createdAt) : ""}
+                  </p>
+                </div>
+
+                <div className="rounded-sm border border-border/60 bg-card p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="font-semibold text-xs">Expiry Date</span>
+                  </div>
+                  <p className="font-medium text-foreground">
+                    {detailsLink.expiresAt ? formatDateTime(detailsLink.expiresAt) : "Never"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {detailsLink.expiresAt
+                      ? new Date(detailsLink.expiresAt) < new Date()
+                        ? "Expired"
+                        : formatRelativeTime(detailsLink.expiresAt)
+                      : "No expiration set"}
+                  </p>
+                </div>
+
+                <div className="rounded-sm border border-border/60 bg-card p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span className="font-semibold text-xs">Status</span>
+                  </div>
+                  <p className="font-semibold">
+                    {detailsLink.expiresAt && new Date(detailsLink.expiresAt) < new Date() ? (
+                      <span className="text-destructive">Expired</span>
+                    ) : detailsLink.isActive ? (
+                      <span className="text-green-500">Active</span>
+                    ) : (
+                      <span className="text-muted-foreground">Disabled</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="rounded-sm border border-border/60 bg-card p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <MousePointerClick className="h-3.5 w-3.5" />
+                    <span className="font-semibold text-xs">Total Clicks</span>
+                  </div>
+                  <p className="font-semibold text-foreground text-sm tabular-nums">
+                    {detailsLink.totalClicks.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="rounded-sm border border-border/60 bg-card p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Lock className="h-3.5 w-3.5" />
+                    <span className="font-semibold text-xs">Protection</span>
+                  </div>
+                  <p className="font-medium text-foreground">
+                    {detailsLink.isPasswordProtected ? (
+                      <span className="text-amber-500 font-semibold flex items-center gap-1">
+                        <Lock className="h-3 w-3" /> Protected
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">None</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:justify-between">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportSingleLinkData(detailsLink!, "csv")}
+                className="w-full sm:w-auto text-xs cursor-pointer gap-1.5"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                Download CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportSingleLinkData(detailsLink!, "json")}
+                className="w-full sm:w-auto text-xs cursor-pointer gap-1.5"
+              >
+                <FileJson className="h-3.5 w-3.5" />
+                Download JSON
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (detailsLink) {
+                    onViewAnalytics(detailsLink.shortCode)
+                    setDetailsLink(null)
+                  }
+                }}
+                className="w-full sm:w-auto text-xs cursor-pointer gap-1.5"
+              >
+                <BarChart2 className="h-3.5 w-3.5" />
+                Analytics
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

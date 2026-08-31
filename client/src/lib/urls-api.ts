@@ -69,3 +69,13 @@ export async function revokeQrCodeApi(
     token,
   })
 }
+
+export async function unlockShortUrl(
+  shortCode: string,
+  password?: string
+): Promise<{ targetUrl: string }> {
+  return requestJson<{ targetUrl: string }>(`/${shortCode}/unlock`, {
+    method: "POST",
+    body: { password: password || "" },
+  })
+}
