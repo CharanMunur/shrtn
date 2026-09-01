@@ -3,9 +3,12 @@
   "name": "shrtn-go-edge-redirector",
   "main": "index.js",
   "compatibility_date": "2025-02-01",
+  "routes": [
+    { "pattern": "shrtn.fun/*", "zone_name": "shrtn.fun" }
+  ],
   "vars": {
     "APP_DASHBOARD_URL": "https://app.shrtn.fun",
-    "RENDER_ORIGIN_URL": "https://shrtn.fun"
+    "RENDER_ORIGIN_URL": "https://shrtn-esyz.onrender.com"
   },
   "rules": [
     {
