@@ -40,7 +40,7 @@ function AppRoutes() {
       {/* Public routes */}
       <Route
         path="/"
-        element={token ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+        element={<LandingPage />}
       />
       <Route
         path="/signin"
