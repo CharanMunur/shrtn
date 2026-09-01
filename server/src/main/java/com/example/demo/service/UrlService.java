@@ -115,6 +115,7 @@ public class UrlService {
 
         String iosUrl = request.getIosUrl() != null && !request.getIosUrl().trim().isEmpty() ? request.getIosUrl().trim() : null;
         String androidUrl = request.getAndroidUrl() != null && !request.getAndroidUrl().trim().isEmpty() ? request.getAndroidUrl().trim() : null;
+        Integer maxClicks = request.getMaxClicks() != null && request.getMaxClicks() > 0 ? request.getMaxClicks() : null;
 
         Url savedUrl;
         if (hasCustomCode) {
@@ -129,6 +130,7 @@ public class UrlService {
                 .passwordHash(passwordHash)
                 .iosUrl(iosUrl)
                 .androidUrl(androidUrl)
+                .maxClicks(maxClicks)
                 .build();
 
             savedUrl = urlRepository.save(url);
@@ -141,6 +143,7 @@ public class UrlService {
                 .passwordHash(passwordHash)
                 .iosUrl(iosUrl)
                 .androidUrl(androidUrl)
+                .maxClicks(maxClicks)
                 .build();
 
             Url saved = urlRepository.save(url);
@@ -155,7 +158,7 @@ public class UrlService {
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
 
         boolean isProtected = passwordHash != null;
-        return new UrlResponse(shortCode, originalUrl, 0, true, false, isProtected, expiresAt, savedUrl.getCreatedAt(), iosUrl, androidUrl);
+        return new UrlResponse(shortCode, originalUrl, 0, true, false, isProtected, expiresAt, savedUrl.getCreatedAt(), iosUrl, androidUrl, maxClicks);
     }
 
     private String resolveTargetUrl(String originalUrl, String iosUrl, String androidUrl, String userAgent) {
@@ -176,6 +179,17 @@ public class UrlService {
             }
         }
         return originalUrl;
+    }
+
+    private void deactivateUrl(Long urlId, String shortCode) {
+        try {
+            Url url = urlRepository.findById(urlId).orElse(null);
+            if (url != null) {
+                url.setActive(false);
+                urlRepository.save(url);
+            }
+        } catch (Exception ignored) {}
+        redisTemplate.delete("url:" + shortCode);
     }
 
     // Resolves a short code to its destination URL, preferring Redis before falling back to DB.
@@ -199,6 +213,13 @@ public class UrlService {
             if (cachedEntry.expiresAt() != null && cachedEntry.expiresAt().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException("This link has expired");
             }
+            if (cachedEntry.maxClicks() != null && cachedEntry.maxClicks() > 0) {
+                long currentCount = clickRepository.countByUrlId(cachedEntry.id());
+                if (currentCount >= cachedEntry.maxClicks()) {
+                    deactivateUrl(cachedEntry.id(), shortCode);
+                    throw new RuntimeException("This link has reached its maximum click limit");
+                }
+            }
             if (cachedEntry.isPasswordProtected()) {
                 throw new RuntimeException("Password required for this link");
             }
@@ -216,6 +237,15 @@ public class UrlService {
             }
             if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException("This link has expired");
+            }
+            if (url.getMaxClicks() != null && url.getMaxClicks() > 0) {
+                long currentCount = clickRepository.countByUrlId(url.getId());
+                if (currentCount >= url.getMaxClicks()) {
+                    url.setActive(false);
+                    urlRepository.save(url);
+                    redisTemplate.delete("url:" + shortCode);
+                    throw new RuntimeException("This link has reached its maximum click limit");
+                }
             }
 
             cacheUrl(cacheKey, url);
@@ -309,7 +339,8 @@ public class UrlService {
                 url.getAndroidUrl(),
                 url.isActive(),
                 isProtected,
-                url.getExpiresAt()
+                url.getExpiresAt(),
+                url.getMaxClicks()
             );
             redisTemplate
                 .opsForValue()
@@ -366,7 +397,8 @@ public class UrlService {
                     url.getExpiresAt(),
                     url.getCreatedAt(),
                     url.getIosUrl(),
-                    url.getAndroidUrl()
+                    url.getAndroidUrl(),
+                    url.getMaxClicks()
                 )
             )
             .toList();

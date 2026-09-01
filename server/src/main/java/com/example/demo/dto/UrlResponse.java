@@ -30,4 +30,5 @@ public class UrlResponse {
     private LocalDateTime createdAt;
     private String iosUrl;
     private String androidUrl;
+    private Integer maxClicks;
 }

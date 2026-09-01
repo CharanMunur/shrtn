@@ -90,21 +90,30 @@ public class UrlController {
     }
 
     @GetMapping({"/signin", "/login"})
-    public ResponseEntity<Void> redirectToSignIn() {
+    public ResponseEntity<?> redirectToSignIn(HttpServletRequest request) {
+        if (request != null && "localhost".equalsIgnoreCase(request.getServerName())) {
+            return serveIndexHtml();
+        }
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(dashboardAppUrl + "/signin"))
             .build();
     }
 
     @GetMapping({"/signup", "/register"})
-    public ResponseEntity<Void> redirectToSignUp() {
+    public ResponseEntity<?> redirectToSignUp(HttpServletRequest request) {
+        if (request != null && "localhost".equalsIgnoreCase(request.getServerName())) {
+            return serveIndexHtml();
+        }
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(dashboardAppUrl + "/signup"))
             .build();
     }
 
     @GetMapping("/dashboard/**")
-    public ResponseEntity<Void> redirectToDashboard() {
+    public ResponseEntity<?> redirectToDashboard(HttpServletRequest request) {
+        if (request != null && "localhost".equalsIgnoreCase(request.getServerName())) {
+            return serveIndexHtml();
+        }
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(dashboardAppUrl + "/dashboard"))
             .build();

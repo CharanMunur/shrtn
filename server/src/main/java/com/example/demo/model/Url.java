@@ -62,4 +62,7 @@ public class Url {
 
     @Column(length = 255)
     private String passwordHash;
+
+    @Column(name = "max_clicks")
+    private Integer maxClicks;
 }

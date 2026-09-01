@@ -10,5 +10,6 @@ public record UrlCacheEntry(
     String androidUrl,
     boolean isActive,
     boolean isPasswordProtected,
-    LocalDateTime expiresAt
+    LocalDateTime expiresAt,
+    Integer maxClicks
 ) {}

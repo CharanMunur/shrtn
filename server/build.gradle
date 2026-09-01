@@ -46,3 +46,7 @@ tasks.register('copyFrontend', Copy) {
 tasks.named('processResources') {
 	dependsOn 'copyFrontend'
 }
+
+bootRun {
+	jvmArgs = ['-Xms64m', '-Xmx192m', '-XX:MaxMetaspaceSize=128m', '-XX:+UseG1GC']
+}

@@ -13,4 +13,5 @@ public class UrlRequest {
     private String password;
     private String iosUrl;
     private String androidUrl;
+    private Integer maxClicks;
 }
