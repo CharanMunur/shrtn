@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./client/public/logo-2.svg" alt="Shrtn Logo" width="520" align="center" />
+  <img src="client/public/logo-2.svg" alt="Shrtn Logo" width="520" />
 </p>
 
 <p align="center">
