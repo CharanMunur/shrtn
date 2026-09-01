@@ -84,6 +84,16 @@ public class UrlController {
         return serveIndexHtml();
     }
 
+    @GetMapping("/assets/{filename}")
+    public ResponseEntity<?> serveAsset(@PathVariable String filename) {
+        return serveStaticResource("assets/" + filename);
+    }
+
+    @GetMapping("/oauth/**")
+    public ResponseEntity<?> serveOAuth() {
+        return serveIndexHtml();
+    }
+
     @GetMapping("/")
     public ResponseEntity<?> serveRoot() {
         return serveIndexHtml();
@@ -117,6 +127,21 @@ public class UrlController {
         return ResponseEntity.status(HttpStatus.FOUND)
             .location(URI.create(dashboardAppUrl + "/dashboard"))
             .build();
+    }
+
+    @PostMapping("/api/v1/clicks/track")
+    public ResponseEntity<?> trackClick(@RequestBody java.util.Map<String, String> body, HttpServletRequest request) {
+        String shortCode = body.get("shortCode");
+        if (shortCode == null || shortCode.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        String ipAddress = body.getOrDefault("ipAddress", request.getRemoteAddr());
+        String userAgent = body.getOrDefault("userAgent", request.getHeader("User-Agent"));
+        String referrer = body.getOrDefault("referrer", request.getHeader("Referer"));
+        String country = body.get("country");
+
+        urlService.recordClickAsync(shortCode, ipAddress, userAgent, referrer, country);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/shorten")

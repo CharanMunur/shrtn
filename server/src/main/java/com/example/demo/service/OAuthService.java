@@ -38,13 +38,14 @@ public class OAuthService {
     @Value("${github.redirect.uri:}")
     private String githubRedirectUri;
 
-    public JsonNode getGoogleProfile(String code) throws Exception {
+    public JsonNode getGoogleProfile(String code, String clientRedirectUri) throws Exception {
+        String targetRedirectUri = (clientRedirectUri != null && !clientRedirectUri.isBlank()) ? clientRedirectUri : googleRedirectUri;
         String tokenBody = String.format(
             "code=%s&client_id=%s&client_secret=%s&redirect_uri=%s&grant_type=authorization_code",
             URLEncoder.encode(code, StandardCharsets.UTF_8),
             URLEncoder.encode(googleClientId, StandardCharsets.UTF_8),
             URLEncoder.encode(googleClientSecret, StandardCharsets.UTF_8),
-            URLEncoder.encode(googleRedirectUri, StandardCharsets.UTF_8)
+            URLEncoder.encode(targetRedirectUri, StandardCharsets.UTF_8)
         );
 
         HttpRequest tokenRequest = HttpRequest.newBuilder()
@@ -75,13 +76,14 @@ public class OAuthService {
         return objectMapper.readTree(profileResponse.body());
     }
 
-    public JsonNode getGitHubProfile(String code) throws Exception {
+    public JsonNode getGitHubProfile(String code, String clientRedirectUri) throws Exception {
+        String targetRedirectUri = (clientRedirectUri != null && !clientRedirectUri.isBlank()) ? clientRedirectUri : githubRedirectUri;
         String tokenBody = String.format(
             "code=%s&client_id=%s&client_secret=%s&redirect_uri=%s",
             URLEncoder.encode(code, StandardCharsets.UTF_8),
             URLEncoder.encode(githubClientId, StandardCharsets.UTF_8),
             URLEncoder.encode(githubClientSecret, StandardCharsets.UTF_8),
-            URLEncoder.encode(githubRedirectUri, StandardCharsets.UTF_8)
+            URLEncoder.encode(targetRedirectUri, StandardCharsets.UTF_8)
         );
 
         HttpRequest tokenRequest = HttpRequest.newBuilder()

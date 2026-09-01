@@ -35,7 +35,7 @@ export function OAuthCallback() {
       try {
         const response = await requestJson<AuthResponse>(`/api/v1/auth/oauth/${provider}`, {
           method: "POST",
-          body: { code },
+          body: { code, redirectUri: window.location.origin + `/oauth/callback/${provider}` },
         })
 
         // Decode the email/sub from JWT payload

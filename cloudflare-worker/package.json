@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:wasm": "GOOS=js GOARCH=wasm go build -o main.wasm main.go",
+    "build:wasm": "GOOS=js GOARCH=wasm go build -ldflags=\"-s -w\" -o main.wasm main.go",
     "build": "bun run build:wasm",
-    "dev": "bun run build:wasm && wrangler dev",
-    "deploy": "bun run build:wasm && wrangler deploy"
+    "dev": "bun run build:wasm && npx wrangler dev",
+    "deploy": "bun run build:wasm && npx wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^3.109.0"

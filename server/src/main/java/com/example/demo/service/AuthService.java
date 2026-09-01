@@ -110,17 +110,17 @@ public class AuthService {
         return new MessageResponse("Password changed successfully.");
     }
 
-    public AuthResponse oauthLogin(String provider, String code) {
+    public AuthResponse oauthLogin(String provider, String code, String redirectUri) {
         try {
             String email;
             String providerId;
 
             if ("GOOGLE".equalsIgnoreCase(provider)) {
-                tools.jackson.databind.JsonNode profile = oAuthService.getGoogleProfile(code);
+                tools.jackson.databind.JsonNode profile = oAuthService.getGoogleProfile(code, redirectUri);
                 email = profile.path("email").asText();
                 providerId = profile.path("sub").asText();
             } else if ("GITHUB".equalsIgnoreCase(provider)) {
-                tools.jackson.databind.JsonNode profile = oAuthService.getGitHubProfile(code);
+                tools.jackson.databind.JsonNode profile = oAuthService.getGitHubProfile(code, redirectUri);
                 email = profile.path("email").asText();
                 providerId = profile.path("id").asText();
             } else {

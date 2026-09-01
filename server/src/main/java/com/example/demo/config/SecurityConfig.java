@@ -59,6 +59,7 @@ public class SecurityConfig {
                     "/oauth/**"
                 ).permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/clicks/track").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/urls/**", "/shorten").authenticated()
                 .requestMatchers("/{shortCode}", "/{shortCode}/unlock").permitAll()

@@ -284,6 +284,31 @@ public class UrlService {
         return targetUrl;
     }
 
+    @Transactional
+    public void recordClickAsync(String shortCode, String ipAddress, String userAgent, String referrer, String country) {
+        Url url = urlRepository.findByShortCode(shortCode).orElse(null);
+        if (url == null) return;
+
+        Click click = Click.builder()
+            .url(url)
+            .clickedAt(LocalDateTime.now())
+            .ipAddress(ipAddress)
+            .userAgent(userAgent)
+            .referrer(referrer)
+            .country(country)
+            .build();
+
+        Click savedClick = clickRepository.save(click);
+        redisTemplate.delete("analytics:" + shortCode);
+        if (url.getUser() != null) {
+            redisTemplate.delete(userUrlsCacheKey(url.getUser().getId()));
+        }
+
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            resolveCountry(savedClick.getId(), ipAddress, shortCode);
+        });
+    }
+
     // Unlocks a password-protected link, verifies password, records click analytics, and returns original URL.
     @Transactional
     public String unlockUrl(String shortCode, String rawPassword, String ipAddress, String userAgent, String referrer, String country) {

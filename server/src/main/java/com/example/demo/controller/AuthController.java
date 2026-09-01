@@ -58,6 +58,6 @@ public class AuthController {
     public ResponseEntity<AuthResponse> oauthLogin(
             @PathVariable String provider,
             @RequestBody OAuthRequest request) {
-        return ResponseEntity.ok(authService.oauthLogin(provider, request.getCode()));
+        return ResponseEntity.ok(authService.oauthLogin(provider, request.getCode(), request.getRedirectUri()));
     }
 }

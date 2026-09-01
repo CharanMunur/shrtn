@@ -13,4 +13,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class OAuthRequest {
     private String code;
+    private String redirectUri;
 }

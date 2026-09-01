@@ -18,6 +18,26 @@ function initGoWasm() {
 // Start Go Wasm runtime on worker cold start
 initGoWasm();
 
+function trackClickAsync(ctx, renderOriginUrl, shortCode, request) {
+  if (ctx && typeof ctx.waitUntil === "function") {
+    const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "";
+    const cfCountry = request.headers.get("CF-IPCountry") || "";
+    ctx.waitUntil(
+      fetch(renderOriginUrl + "/api/v1/clicks/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shortCode: shortCode,
+          ipAddress: clientIp,
+          userAgent: request.headers.get("User-Agent") || "",
+          referrer: request.headers.get("Referer") || "",
+          country: cfCountry
+        })
+      }).catch((e) => console.error("Async click track error:", e))
+    );
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const urlObj = new URL(request.url);
@@ -33,15 +53,14 @@ export default {
     if (urlObj.pathname === "/signin") return Response.redirect(appDashboardUrl + "/signin", 302);
     if (urlObj.pathname === "/signup") return Response.redirect(appDashboardUrl + "/signup", 302);
     if (urlObj.pathname === "/dashboard" || urlObj.pathname.startsWith("/dashboard/")) return Response.redirect(appDashboardUrl + urlObj.pathname, 302);
-    if (urlObj.pathname === "/" || urlObj.pathname === "") return Response.redirect(renderOriginUrl, 302);
+    if (urlObj.pathname === "/" || urlObj.pathname === "") return fetch(new Request(renderOriginUrl + urlObj.pathname + urlObj.search, request));
 
     const shortCode = urlObj.pathname.replace(/^\/+/, "");
     if (!shortCode || shortCode.includes("/")) {
       return fetch(new Request(renderOriginUrl + urlObj.pathname + urlObj.search, request));
     }
 
-    // 1. Fetch cached link from Upstash Redis REST at Edge speed
-    let upstashJson = "";
+    // 1. Query Upstash Redis REST API directly from Cloudflare Edge
     const upstashUrl = env.UPSTASH_REDIS_REST_URL;
     const upstashToken = env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -54,7 +73,34 @@ export default {
         if (upstashResp.ok) {
           const data = await upstashResp.json();
           if (data && data.result) {
-            upstashJson = typeof data.result === "string" ? data.result : JSON.stringify(data.result);
+            let entry = null;
+            try {
+              entry = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
+            } catch (e) {}
+
+            if (entry && entry.originalUrl) {
+              if (entry.isActive === false) {
+                return Response.redirect(appDashboardUrl + "/404?reason=deactivated", 302);
+              }
+              if (entry.isPasswordProtected) {
+                return Response.redirect(appDashboardUrl + "/unlock/" + shortCode, 302);
+              }
+
+              // Fire non-blocking click tracking event to Spring Boot in background
+              trackClickAsync(ctx, renderOriginUrl, shortCode, request);
+
+              // Smart Device Routing at Edge
+              const ua = (request.headers.get("User-Agent") || "").toLowerCase();
+              if (entry.iosUrl && (ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod"))) {
+                return Response.redirect(entry.iosUrl, 302);
+              }
+              if (entry.androidUrl && ua.includes("android")) {
+                return Response.redirect(entry.androidUrl, 302);
+              }
+
+              // Sub-20ms Edge Redirect
+              return Response.redirect(entry.originalUrl, 302);
+            }
           }
         }
       } catch (e) {
@@ -62,37 +108,7 @@ export default {
       }
     }
 
-    // 2. Pass link data into Go Wasm engine for smart device routing & destruct validation
-    try {
-      let attempts = 0;
-      while (typeof globalThis.handleGoRedirect !== "function" && attempts < 20) {
-        await new Promise((resolve) => setTimeout(resolve, 5));
-        attempts++;
-      }
-
-      if (typeof globalThis.handleGoRedirect === "function") {
-        const userAgent = request.headers.get("User-Agent") || "";
-        const result = globalThis.handleGoRedirect(
-          shortCode,
-          userAgent,
-          upstashJson,
-          appDashboardUrl,
-          renderOriginUrl
-        );
-
-        if (result) {
-          const redirectUrl = typeof result.redirectUrl === "string" ? result.redirectUrl : (result.get ? result.get("redirectUrl") : "");
-          const status = typeof result.status === "number" ? result.status : (result.get ? result.get("status") : 302);
-          if (redirectUrl) {
-            return Response.redirect(redirectUrl, status || 302);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Go Wasm edge redirect error:", err);
-    }
-
-    // Fallback to Render origin
+    // Cache Miss Fallback to Render origin container
     return fetch(new Request(renderOriginUrl + urlObj.pathname + urlObj.search, request));
   }
 };
