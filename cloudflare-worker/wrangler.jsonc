@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shrtn-go-edge-redirector",
+  "main": "index.js",
+  "compatibility_date": "2025-02-01",
+  "vars": {
+    "APP_DASHBOARD_URL": "https://app.shrtn.fun",
+    "RENDER_ORIGIN_URL": "https://shrtn.fun"
+  },
+  "rules": [
+    {
+      "type": "CompiledWasm",
+      "globs": ["**/*.wasm"]
+    }
+  ]
+}
