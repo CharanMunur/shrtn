@@ -1,11 +1,11 @@
 # Shrtn — Production-Grade URL Shortener
 
-A fast, full-stack URL shortener with click analytics, OTP-based authentication, a Redis-backed redirect engine, 1-Click Smart Device Routing, and dynamic QR Code generation. 
+A fast, full-stack URL shortener with click analytics, OTP-based authentication, a Go WebAssembly Cloudflare Worker edge redirect engine, Auto-Destruct links, 1-Click Smart Device Routing, and dynamic QR Code generation. 
 
 ## Live Services
 
 - **Frontend App & Dashboard**: [app.shrtn.fun](https://app.shrtn.fun) (Vercel)
-- **Landing Page, API & Short Links**: [shrtn.fun](https://shrtn.fun) (Render)
+- **Landing Page, API & Short Links**: [shrtn.fun](https://shrtn.fun) (Render & Cloudflare Edge)
 
 ---
 
@@ -13,41 +13,22 @@ A fast, full-stack URL shortener with click analytics, OTP-based authentication,
 
 This repository is organized as a monorepo:
 
-- **[client/](./client)**: React 19 + Vite frontend. Features clean modern dashboard styling with Tailwind CSS v4, Framer Motion page transitions, Recharts analytics, and dynamic QR Code actions. See the [Client README](./client/README.md) for details.
+- **[client/](./client)**: React 19 + Vite frontend. Features clean modern dashboard styling with Tailwind CSS v4, Framer Motion page transitions, Recharts analytics, shadcn UI components, and dynamic QR Code actions. See the [Client README](./client/README.md) for details.
 - **[server/](./server)**: Java 25 + Spring Boot 4 REST API. Backed by PostgreSQL (Supabase), Upstash Redis caching, and the Resend API for transactional email verification. Bundles static frontend resources automatically via Gradle. See the [Server README](./server/README.md) for details.
+- **[cloudflare-worker/](./cloudflare-worker)**: High-performance edge redirection engine written in **Go (Golang)** compiled to **WebAssembly (`main.wasm`)**. Executes sub-20ms short URL redirects, Upstash Redis REST queries, and smart device routing at Cloudflare's 300+ Edge Isolates. See the [Worker README](./cloudflare-worker/README.md) for details.
 
 ---
 
 ## Key Features
 
-- **1-Click Smart Device Routing**: Configure targeted destination links for **iOS** (iPhone/iPad App Store) and **Android** (Google Play Store) visitors alongside the main URL. Device routing is evaluated in real-time at the redirect layer.
-- **Unified Landing Page & Domain Separation**: `shrtn.fun` serves the public Landing Page directly at `GET /`, while authentication and dashboard routes (`/signin`, `/signup`, `/dashboard`) return HTTP 302 redirects to `app.shrtn.fun`.
-- **Social Authentication (Google & GitHub)**: Integrated credentials-free login and signup with secure authorization flows, client-side callback redirection, and auto-linking for matching email accounts.
-- **Fast Redis Redirects**: Redirection engine backed by Upstash Redis (24h caching) with fallbacks to Supabase PostgreSQL.
-- **Interactive Vector World Map**: Visualizes click density instantly across country boundaries using a lightweight, self-contained, offline-first vector map, complete with hover highlighting and custom floating tooltips matching the Recharts popover style.
-- **GeoIP Location Tracking**: Resolves countries, regions, and cities using background lookup fallbacks to `ip-api.com` and proxy header extractions. Includes loopback client geolocation during local development tests.
-- **24x7 Traffic Activity Heatmap**: Custom punchcard visualizer graphing hourly click density across all days of the week, with modernized popover-style hover tooltips adjusted dynamically to match the client's local timezone.
-- **Offline-First SVG Icon Assets**: Serves clean browser, operating system, traffic referrer, and device icons directly from the local `/icons/` public folder, avoiding CDN request latency or network failures.
-- **Dicebear Notionists Avatars**: Generates unique, highly-styled human avatars dynamically for the "Recent Clicks" feed, utilizing the visitor's IP address as a persistent random seed.
-- **Umami-Style Dashboard Panels**: Simplified, highly-organized layout with clean normal-casing headers, bottom active-border indicators, and bottom footer maximize buttons:
-  - *Environment*: Browsers, OS Types, and Devices.
-  - *Location*: Countries, Regions, and Cities (with dynamic country flag icons shown for regions and cities).
-- **Maximized Modals**: Click a card's footer "More" button to expand the tab into a spacious `max-w-4xl` dialog showing up to 100 detailed entries.
-- **Dynamic QR Code Actions**: Downloadable SVG QR Codes resolved instantly by appending `?format=qr` to shortened links.
-- **Reduced Roundness Styling**: Clean, modern, unified layout using sharp `rounded-lg` cards, modals, and elements for a polished user interface.
-- **Transactional Auth**: OTP security verified via Resend email delivery.
-
----
-
-## Architecture Overview
-
-1. **Redirect & Smart Routing Path**: Public requests to `shrtn.fun/{shortCode}` query Upstash Redis first (24h cache) and fall back to Supabase PostgreSQL on misses. The engine checks the visitor's User-Agent for iOS or Android signatures to perform **Smart Device Routing**, logs clicks with location analytics, and issues a 302 redirect.
-2. **Domain & Route Delegation**:
-   - `https://shrtn.fun/` ➔ Serves public Landing Page directly (`200 OK`).
-   - `https://shrtn.fun/signin` & `/signup` ➔ 302 Redirect to `https://app.shrtn.fun/signin` and `https://app.shrtn.fun/signup`.
-   - `https://shrtn.fun/dashboard/*` ➔ 302 Redirect to `https://app.shrtn.fun/dashboard`.
-3. **QR Code Resolution**: Append `?format=qr` to any valid short URL to dynamically resolve, render, and download its QR code image directly from the backend.
-4. **Caches**: Employs separate Redis caches for the redirect hot-path, user URL listings, and click analytics, with active invalidation strategies on writes. Evicts click analytics caches instantly on redirect to ensure zero-lag click updates on the dashboard.
+- **🔥 Auto-Destruct / "Burn After Reading" Links**: Set optional `maxClicks` limits on shortened URLs. Once reached, the link automatically deactivates, evicts from Redis cache, and shows live progress badges (`🔥 X / N`) on user dashboards.
+- **⚡ Go WebAssembly Cloudflare Worker Edge Engine**: Ultra-fast sub-20ms 302 redirects executed directly at Cloudflare's nearest edge data center via Go Wasm (`main.wasm`), querying Upstash Redis REST API endpoints in real-time.
+- **📱 1-Click Smart Device Routing**: Configure targeted destination links for **iOS** (iPhone/iPad App Store) and **Android** (Google Play Store) visitors alongside the main URL. Device routing is evaluated at the edge redirect layer.
+- **🌐 Unified Landing Page & Localhost Smart Routing**: `shrtn.fun` serves the public Landing Page directly at `GET /`, while authentication and dashboard routes (`/signin`, `/signup`, `/dashboard`) handle local dev vs production environments seamlessly.
+- **🔐 Social & OTP Authentication (Google & GitHub)**: Integrated credentials-free login/signup with secure authorization flows, client-side callback redirection, and OTP verification via Resend email delivery.
+- **🗺️ Interactive Vector World Map**: Visualizes click density instantly across country boundaries using a lightweight, self-contained, offline-first vector map with custom hover tooltips.
+- **📊 GeoIP Location & Punchcard Analytics**: Resolves countries, regions, and cities with background lookup fallbacks. Graphs hourly 24x7 traffic density matching the user's local timezone.
+- **🎨 Modernized Card-less UI/UX**: Clean layout using shadcn UI components, progressive disclosure tabs, and sharp `rounded-md`/`rounded-sm` geometry.
 
 ---
 
@@ -55,14 +36,14 @@ This repository is organized as a monorepo:
 
 ### Prerequisites
 
-Ensure you have **Java 25**, **Bun** (or **Node.js**), and a local/cloud database config.
+Ensure you have **Java 25**, **Go 1.22+**, **Bun** (or **Node.js**), and local/cloud database config.
 
 ### 1. Launch Backend API
 
 ```bash
 cd server
 cp .env.example .env   # configure environment variables
-./gradlew bootRun      # runs on http://localhost:8080 (includes copied frontend dist)
+./gradlew bootRun      # runs on http://localhost:8080
 ```
 
 ### 2. Launch React Dashboard
@@ -71,6 +52,13 @@ cp .env.example .env   # configure environment variables
 cd client
 bun install            # or npm install
 bun run dev            # runs on http://localhost:5173 (proxied to :8080)
+```
+
+### 3. Launch Go WebAssembly Cloudflare Worker (Optional)
+
+```bash
+cd cloudflare-worker
+bun run dev            # runs local Wrangler dev server on http://localhost:8787
 ```
 
 ---
