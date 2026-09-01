@@ -41,6 +41,7 @@ export type UrlRequest = {
   password?: string
   iosUrl?: string
   androidUrl?: string
+  maxClicks?: number
 }
 
 export type UrlResponse = {
@@ -56,6 +57,7 @@ export type UrlResponse = {
   createdAt?: string
   iosUrl?: string
   androidUrl?: string
+  maxClicks?: number
 }
 
 export type UnlockRequest = {

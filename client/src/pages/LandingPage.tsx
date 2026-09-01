@@ -137,15 +137,27 @@ export function LandingPage() {
   const appBase = getAppDashboardBaseUrl()
 
   const goToSignIn = () => {
-    window.location.href = `${appBase}/signin`
+    if (appBase) {
+      window.location.href = `${appBase}/signin`
+    } else {
+      navigate("/signin")
+    }
   }
 
   const goToSignUp = () => {
-    window.location.href = `${appBase}/signup`
+    if (appBase) {
+      window.location.href = `${appBase}/signup`
+    } else {
+      navigate("/signup")
+    }
   }
 
   const goToDashboard = () => {
-    window.location.href = `${appBase}/dashboard`
+    if (appBase) {
+      window.location.href = `${appBase}/dashboard`
+    } else {
+      navigate("/dashboard")
+    }
   }
 
   // Ensure the page starts at the top and force light mode

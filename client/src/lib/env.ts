@@ -7,6 +7,9 @@ export function getPublicShortUrlBase() {
 }
 
 export function getAppDashboardBaseUrl() {
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return ""
+  }
   return import.meta.env.VITE_APP_DASHBOARD_URL?.trim() || "https://app.shrtn.fun"
 }
 

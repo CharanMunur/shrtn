@@ -18,6 +18,7 @@ import {
   FileJson,
   Calendar,
   Lock,
+  Flame,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/providers/auth-provider"
@@ -426,6 +427,12 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                             Protected
                           </span>
                         )}
+                        {url.maxClicks != null && url.maxClicks > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 border border-orange-500/20 text-[10px] font-medium" title={`Auto-destructs after ${url.maxClicks} clicks`}>
+                            <Flame className="h-3 w-3" />
+                            {url.totalClicks} / {url.maxClicks}
+                          </span>
+                        )}
                       </div>
                       
                       <div className="flex items-center gap-2">
@@ -556,6 +563,12 @@ export function MyLinksPage({ onViewAnalytics }: MyLinksPageProps) {
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-medium" title="Password protected">
                           <Lock className="h-3 w-3" />
                           Protected
+                        </span>
+                      )}
+                      {url.maxClicks != null && url.maxClicks > 0 && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 border border-orange-500/20 text-[10px] font-medium" title={`Auto-destructs after ${url.maxClicks} clicks`}>
+                          <Flame className="h-3 w-3" />
+                          {url.totalClicks} / {url.maxClicks}
                         </span>
                       )}
                     </div>
