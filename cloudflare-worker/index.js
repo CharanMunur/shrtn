@@ -49,6 +49,36 @@ export default {
       return fetch(new Request(renderOriginUrl + "/health", request));
     }
 
+    // Edge Cache static assets to prevent Render wake-up 502 timeouts
+    if (urlObj.pathname.startsWith("/assets/")) {
+      const cache = caches.default;
+      let cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      try {
+        const originReq = new Request(renderOriginUrl + urlObj.pathname + urlObj.search, request);
+        const originResp = await fetch(originReq);
+        if (originResp.ok) {
+          const headers = new Headers(originResp.headers);
+          headers.set("Cache-Control", "public, max-age=31536000, immutable");
+          const responseToCache = new Response(originResp.body, {
+            status: originResp.status,
+            statusText: originResp.statusText,
+            headers: headers
+          });
+          if (ctx && typeof ctx.waitUntil === "function") {
+            ctx.waitUntil(cache.put(request, responseToCache.clone()));
+          }
+          return responseToCache;
+        }
+        return originResp;
+      } catch (e) {
+        console.error("Asset fetch error:", e);
+      }
+    }
+
     // Static auth & root routes handled instantly at edge
     if (urlObj.pathname === "/signin") return Response.redirect(appDashboardUrl + "/signin", 302);
     if (urlObj.pathname === "/signup") return Response.redirect(appDashboardUrl + "/signup", 302);

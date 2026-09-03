@@ -28,7 +28,7 @@
 
 Shrtn is an enterprise-grade URL shortening and traffic intelligence engine. It combines a low-latency **Go (Golang) WebAssembly Edge Redirect Engine** running across Cloudflare's global network with a **Spring Boot 4 REST API** and a **React 19 Dashboard**.
 
-Designed for high availability, short links resolve at Cloudflare Edge Isolates in under 20 milliseconds by querying Upstash Redis REST endpoints directly, with automated fallbacks to PostgreSQL database storage.
+Designed for high availability, short links resolve at Cloudflare Edge Isolates in under 20 milliseconds by querying Upstash Redis REST endpoints directly, with non-blocking asynchronous click analytics logging to PostgreSQL and automatic fallbacks.
 
 ---
 
@@ -39,8 +39,8 @@ The repository is structured as a monorepo containing three primary services:
 | Component | Path | Description | Deployment |
 |---|---|---|---|
 | **Client** | [`/client`](./client) | React 19, TypeScript, Vite, Tailwind CSS v4, shadcn UI components, Recharts analytics, Framer Motion transitions | Vercel (`app.shrtn.fun`) |
-| **Server** | [`/server`](./server) | Java 25, Spring Boot 4 REST API, Spring Data JPA, JWT Authentication, Resend API integration | Render (`shrtn.fun`) |
-| **Worker** | [`/cloudflare-worker`](./cloudflare-worker) | Go 1.22 compiled to WebAssembly (`main.wasm`), sub-20ms edge redirects, Upstash REST client | Cloudflare Workers |
+| **Server** | [`/server`](./server) | Java 25, Spring Boot 4 REST API, Spring Data JPA, JWT Authentication, Resend API integration, Gradle frontend sync | Render (`shrtn.fun`) |
+| **Worker** | [`/cloudflare-worker`](./cloudflare-worker) | Go 1.22 compiled to WebAssembly (`main.wasm`), sub-20ms edge redirects, Upstash REST client, Edge static asset caching | Cloudflare Workers |
 
 ---
 
@@ -51,25 +51,35 @@ The repository is structured as a monorepo containing three primary services:
 - **Upstash Redis Querying**: Direct HTTP GET requests to Upstash Redis REST endpoints (`/get/url:{shortCode}`).
 - **Static Route Fast Paths**: Instant 302 redirects for static authentication routes (`/signin`, `/signup`, `/dashboard`).
 
-### 2. Smart Device Routing
+### 2. Edge Asset Caching & Zero 502 Bad Gateways
+- All `/assets/*` static JS/CSS bundles are cached directly at Cloudflare Edge (`caches.default`) with `max-age=31536000, immutable`.
+- Eliminates Render free-tier container wake-up timeouts (`502 Bad Gateway`).
+
+### 3. Non-Blocking Async Click Tracking (`ctx.waitUntil`)
+- Visitor receives sub-20ms 302 redirects directly from Cloudflare Edge.
+- Cloudflare asynchronously dispatches click tracking events (`POST /api/v1/clicks/track`) with real visitor IP (`CF-Connecting-IP`) and Cloudflare GeoIP Country (`CF-IPCountry`).
+- Updates PostgreSQL `clicks` table and invalidates Redis analytics cache in real-time.
+
+### 4. Smart Device Routing
 - Real-time User-Agent parsing at the redirect boundary.
 - Directs **iOS** visitors (`iPhone`, `iPad`, `iPod`) to dedicated App Store URLs (`iosUrl`).
 - Directs **Android** visitors to Google Play Store URLs (`androidUrl`).
 - Fallback redirection to the primary destination URL for desktop clients.
 
-### 3. Auto-Destruct Links ("Burn After Reading")
+### 5. Auto-Destruct Links ("Burn After Reading")
 - Configurable `maxClicks` limits per URL.
 - Link automatically deactivates and evicts from cache upon reaching the threshold.
 - Live click progress indicators (`X / N`) displayed in the client dashboard.
 
-### 4. Traffic Intelligence & Analytics
+### 6. Traffic Intelligence & Analytics
 - Privacy-first geolocation tracking (Country, Region, City) via IP headers and background resolution.
 - 24x7 hourly traffic activity punchcard heatmaps aligned to the user's local timezone.
 - Interactive vector world map with country-level click density visualizers.
 - Device, browser, and operating system distribution breakdowns.
 
-### 5. Security & Authentication
+### 7. Security & Authentication
 - Dual-mode authentication via Google OAuth 2.0, GitHub OAuth, and traditional credentials.
+- Dynamic OAuth `redirect_uri` resolution supporting `localhost:8080`, `localhost:5173`, and `app.shrtn.fun`.
 - Transactional OTP verification delivered via Resend API (`noreply@shrtn.fun`).
 - Optional password lock protection on individual short links.
 
@@ -77,7 +87,7 @@ The repository is structured as a monorepo containing three primary services:
 
 ## Technical Specifications
 
-### Cache Hierarchy
+### Cache Hierarchy & Async Analytics Flow
 
 ```
 [ Visitor Request ]
@@ -85,12 +95,15 @@ The repository is structured as a monorepo containing three primary services:
         ▼
 [ Cloudflare Edge (Go Wasm) ] ──(REST GET)──► [ Upstash Redis (24h TTL) ]
         │                                             │
-        │ Cache Miss                                  │ Cache Hit
-        ▼                                             ▼
-[ Spring Boot API (Render) ] ───────────────► [ 302 Redirect ]
+        │ Sub-20ms 302 Redirect                       │ Cache Hit
+        ├─────────────────────────────────────────────► [ Visitor Browser ]
         │
+        │ (Async ctx.waitUntil)
         ▼
-[ PostgreSQL (Supabase) ]
+[ POST /api/v1/clicks/track ] ──────────────► [ Spring Boot API (Render) ]
+                                                      │
+                                                      ▼
+                                            [ PostgreSQL (Supabase) ]
 ```
 
 ### Database Entity Model
@@ -117,16 +130,16 @@ cd server
 cp .env.example .env
 ./gradlew bootRun
 ```
-*Backend runs on `http://localhost:8080`.*
+*Backend runs on `http://localhost:8080`. Gradle automatically runs `copyFrontend` to sync `client/dist` to `server/src/main/resources/static`.*
 
-### 2. Start Frontend Client
+### 2. Start Frontend Client (Hot Reload Dev)
 
 ```bash
 cd client
 bun install
 bun run dev
 ```
-*Frontend runs on `http://localhost:5173` (requests to `/api` proxy to `:8080`).*
+*Frontend runs on `http://localhost:5173` with instant Hot Module Replacement (HMR).*
 
 ### 3. Start Cloudflare Edge Worker (Local)
 
@@ -147,13 +160,13 @@ cd cloudflare-worker
 bun run deploy
 ```
 
-### Production Build (Frontend static bundle copy to Java static assets)
+### Production Build
 
 ```bash
 cd client
 bun run build
-cp -r dist/* ../server/src/main/resources/static/
 ```
+*Vite compiles static assets and automatically syncs `dist/*` to `server/src/main/resources/static/`.*
 
 ---
 
