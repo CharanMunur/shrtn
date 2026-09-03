@@ -49,7 +49,7 @@ export default {
       return fetch(new Request(renderOriginUrl + "/health", request));
     }
 
-    // Edge Cache static assets to prevent Render wake-up 502 timeouts
+    // Edge Cache static assets & strip invalid content-disposition header to prevent browser script blocking
     if (urlObj.pathname.startsWith("/assets/")) {
       const cache = caches.default;
       let cachedResponse = await cache.match(request);
@@ -63,6 +63,15 @@ export default {
         if (originResp.ok) {
           const headers = new Headers(originResp.headers);
           headers.set("Cache-Control", "public, max-age=31536000, immutable");
+          headers.delete("Content-Disposition");
+          headers.delete("content-disposition");
+
+          if (urlObj.pathname.endsWith(".js")) {
+            headers.set("Content-Type", "application/javascript; charset=UTF-8");
+          } else if (urlObj.pathname.endsWith(".css")) {
+            headers.set("Content-Type", "text/css; charset=UTF-8");
+          }
+
           const responseToCache = new Response(originResp.body, {
             status: originResp.status,
             statusText: originResp.statusText,
