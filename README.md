@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A high-performance, full-stack URL shortener and analytics platform built with Spring Boot, React, and Go WebAssembly on Cloudflare Edge.
+  A high-performance, full-stack URL shortener and traffic intelligence platform built with Spring Boot, React, and Go WebAssembly on Cloudflare Edge.
 </p>
 
 <p align="center">
@@ -51,31 +51,33 @@ The repository is structured as a monorepo containing three primary services:
 - **Upstash Redis Querying**: Direct HTTP GET requests to Upstash Redis REST endpoints (`/get/url:{shortCode}`).
 - **Static Route Fast Paths**: Instant 302 redirects for static authentication routes (`/signin`, `/signup`, `/dashboard`).
 
-### 2. Edge Asset Caching & Zero 502 Bad Gateways
+### 2. Advanced Traffic Intelligence & Analytics
+- **Growth Velocity & Trend Badges**: Live percentage growth (+X% / -X%) comparing current traffic against prior 7-day windows.
+- **Peak Engagement Time Window**: Evaluates traffic heatmaps to calculate the day and hour of peak visitor activity (e.g. `Thursdays at 4:00 PM`).
+- **Referrer Categorization**: Groups incoming traffic into **Social** (X/Twitter, LinkedIn, Reddit, Instagram, Facebook, YouTube), **Search** (Google, Bing, DuckDuckGo), **Direct**, and **Email**.
+- **UTM Campaign Tracking**: Tracks `utm_source`, `utm_medium`, and `utm_campaign` metrics.
+- **Live Click Log**: Real-time click stream table featuring **Dicebear Notionists avatars**, country flag icons, browser/OS badges, and humanized relative timestamps.
+- **1-Click Data Export**: Download full click analytics to **CSV** or **JSON** formats.
+
+### 3. Edge Asset Caching & Zero 502 Bad Gateways
 - All `/assets/*` static JS/CSS bundles are cached directly at Cloudflare Edge (`caches.default`) with `max-age=31536000, immutable`.
 - Eliminates Render free-tier container wake-up timeouts (`502 Bad Gateway`).
 
-### 3. Non-Blocking Async Click Tracking (`ctx.waitUntil`)
+### 4. Non-Blocking Async Click Tracking (`ctx.waitUntil`)
 - Visitor receives sub-20ms 302 redirects directly from Cloudflare Edge.
 - Cloudflare asynchronously dispatches click tracking events (`POST /api/v1/clicks/track`) with real visitor IP (`CF-Connecting-IP`) and Cloudflare GeoIP Country (`CF-IPCountry`).
 - Updates PostgreSQL `clicks` table and invalidates Redis analytics cache in real-time.
 
-### 4. Smart Device Routing
+### 5. Smart Device Routing
 - Real-time User-Agent parsing at the redirect boundary.
 - Directs **iOS** visitors (`iPhone`, `iPad`, `iPod`) to dedicated App Store URLs (`iosUrl`).
 - Directs **Android** visitors to Google Play Store URLs (`androidUrl`).
 - Fallback redirection to the primary destination URL for desktop clients.
 
-### 5. Auto-Destruct Links ("Burn After Reading")
+### 6. Auto-Destruct Links ("Burn After Reading")
 - Configurable `maxClicks` limits per URL.
 - Link automatically deactivates and evicts from cache upon reaching the threshold.
 - Live click progress indicators (`X / N`) displayed in the client dashboard.
-
-### 6. Traffic Intelligence & Analytics
-- Privacy-first geolocation tracking (Country, Region, City) via IP headers and background resolution.
-- 24x7 hourly traffic activity punchcard heatmaps aligned to the user's local timezone.
-- Interactive vector world map with country-level click density visualizers.
-- Device, browser, and operating system distribution breakdowns.
 
 ### 7. Security & Authentication
 - Dual-mode authentication via Google OAuth 2.0, GitHub OAuth, and traditional credentials.
@@ -110,7 +112,7 @@ The repository is structured as a monorepo containing three primary services:
 
 - **`users`**: Account identity, hashed passwords, verification flags.
 - **`urls`**: Shortcode mappings, destination URLs, smart device routes, expiration timestamps, auto-destruct limits (`max_clicks`), password hashes.
-- **`clicks`**: Timestamped visit logs, IP hashes, User-Agent parameters, resolved country/region/city metadata.
+- **`clicks`**: Timestamped visit logs, IP hashes, User-Agent parameters, resolved country/region/city metadata, `utm_source`, `utm_medium`, `utm_campaign`.
 - **`otps`**: One-time pins for registration and password recovery flows.
 
 ---

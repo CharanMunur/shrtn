@@ -74,24 +74,25 @@ const FEATURE_TABS: Array<{
 }> = [
   {
     key: "redirects",
-    title: "Fast, controlled short links",
-    heading: "Short links built for daily use",
-    body: "Create clean short links with generated Base62 codes or your own custom alias. Every link includes an expiry window, ownership checks, active or inactive status, and a dashboard record with its destination and click count.",
+    title: "Sub-20ms Edge Short Links",
+    heading: "Sub-20ms Redirection Engine",
+    body: "Create clean short links with custom aliases, auto-destruct max click limits, smart device routing (iOS & Android), and password protection. Powered by Go WebAssembly on Cloudflare Edge Isolates.",
     highlights: [
-      "Custom aliases",
-      "Expiry controls",
-      "Active status toggles",
+      "Sub-20ms Edge Speed",
+      "Smart Device Routing",
+      "Auto-Destruct Limits",
     ],
   },
   {
     key: "analytics",
-    title: "Detailed click analytics",
-    heading: "Actionable Analytics",
-    body: "Understand how each link performs with analytics across total clicks, recent visits, referrers, browsers, operating systems, devices, countries, regions, cities, and activity by date and hour.",
+    title: "Advanced Traffic Intelligence",
+    heading: "Actionable Traffic Insights & CSV Export",
+    body: "Understand link performance with growth trend percentages (+X%), peak engagement window detection, categorized traffic sources (Social, Search, Direct), UTM campaign tracking, interactive world maps, live click activity streams, and 1-click CSV data export.",
     highlights: [
-      "Device, OS, browser",
-      "Country, region, city",
-      "Date and hour patterns",
+      "Growth Velocity & Trends",
+      "Peak Hour Detection",
+      "Social & UTM Attribution",
+      "1-Click CSV Export",
     ],
   },
   {

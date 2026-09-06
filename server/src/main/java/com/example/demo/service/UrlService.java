@@ -586,12 +586,19 @@ public class UrlService {
             List<ClickDetailDTO> lastClicks = clicks
                 .stream()
                 .sorted(Comparator.comparing(Click::getClickedAt).reversed())
-                .limit(5)
+                .limit(20)
                 .map(click ->
                     ClickDetailDTO.builder()
                         .clickedAt(click.getClickedAt())
                         .ipAddress(click.getIpAddress())
                         .userAgent(click.getUserAgent())
+                        .referrer(click.getReferrer())
+                        .country(click.getCountry())
+                        .region(click.getRegion())
+                        .city(click.getCity())
+                        .utmSource(click.getUtmSource())
+                        .utmMedium(click.getUtmMedium())
+                        .utmCampaign(click.getUtmCampaign())
                         .build()
                 )
                 .toList();
@@ -603,6 +610,42 @@ public class UrlService {
                 int hour = click.getClickedAt().getHour(); // 0 to 23
                 trafficHeatmap[dayIndex][hour]++;
             }
+
+            Map<String, Long> referrerCategories = clicks
+                .stream()
+                .map(click -> categorizeReferrer(extractReferrerDomain(click.getReferrer())))
+                .collect(Collectors.groupingBy(cat -> cat, Collectors.counting()));
+
+            Map<String, Long> utmSources = clicks
+                .stream()
+                .map(click -> click.getUtmSource() != null ? click.getUtmSource() : "None")
+                .filter(s -> !s.equalsIgnoreCase("None"))
+                .collect(Collectors.groupingBy(s -> s, Collectors.counting()));
+
+            Map<String, Long> utmCampaigns = clicks
+                .stream()
+                .map(click -> click.getUtmCampaign() != null ? click.getUtmCampaign() : "None")
+                .filter(c -> !c.equalsIgnoreCase("None"))
+                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime sevenDaysAgo = now.minusDays(7);
+            LocalDateTime fourteenDaysAgo = now.minusDays(14);
+
+            long currentPeriodCount = clicks.stream().filter(c -> c.getClickedAt().isAfter(sevenDaysAgo)).count();
+            long previousPeriodCount = clicks.stream().filter(c -> c.getClickedAt().isAfter(fourteenDaysAgo) && c.getClickedAt().isBefore(sevenDaysAgo)).count();
+            
+            Double clickGrowthPercent;
+            if (previousPeriodCount == 0) {
+                clickGrowthPercent = currentPeriodCount > 0 ? 100.0 : 0.0;
+            } else {
+                double diff = (double) (currentPeriodCount - previousPeriodCount);
+                clickGrowthPercent = Math.round((diff / previousPeriodCount * 100.0) * 10.0) / 10.0;
+            }
+
+            String peakTime = calculatePeakTime(trafficHeatmap);
+            long daysSpan = Math.max(1, clicksByDate.size());
+            Double avgDailyClicks = Math.round(((double) clicks.size() / daysSpan) * 10.0) / 10.0;
 
             UrlAnalyticsResponse result = UrlAnalyticsResponse.builder()
                 .shortCode(url.getShortCode())
@@ -618,12 +661,213 @@ public class UrlService {
                 .regionBreakdown(regionBreakdown)
                 .cityBreakdown(cityBreakdown)
                 .trafficHeatmap(trafficHeatmap)
+                .clickGrowthPercent(clickGrowthPercent)
+                .peakTime(peakTime)
+                .avgDailyClicks(avgDailyClicks)
+                .referrerCategories(referrerCategories)
+                .utmSources(utmSources)
+                .utmCampaigns(utmCampaigns)
                 .build();
             String json = objectMapper.writeValueAsString(result);
 
             redisTemplate.opsForValue().set(cacheKey, json, Duration.ofHours(24));
             return result;
         }
+    }
+
+    // Computes aggregated account-wide analytics across all URLs owned by the current user.
+    public UrlAnalyticsResponse getPortfolioAnalytics() {
+        User user = authUtils.getCurrentUser();
+        List<Url> urls = urlRepository.findByUser(user);
+
+        if (urls.isEmpty()) {
+            return UrlAnalyticsResponse.builder()
+                .shortCode("portfolio")
+                .originalUrl("Account Portfolio Overview")
+                .totalClicks(0)
+                .lastClicks(List.of())
+                .browserBreakdown(Map.of())
+                .osBreakdown(Map.of())
+                .clicksByDate(Map.of())
+                .referrerBreakdown(Map.of())
+                .deviceBreakdown(Map.of())
+                .countryBreakdown(Map.of())
+                .regionBreakdown(Map.of())
+                .cityBreakdown(Map.of())
+                .trafficHeatmap(new int[7][24])
+                .clickGrowthPercent(0.0)
+                .peakTime("No traffic yet")
+                .avgDailyClicks(0.0)
+                .referrerCategories(Map.of())
+                .utmSources(Map.of())
+                .utmCampaigns(Map.of())
+                .build();
+        }
+
+        List<Click> clicks = clickRepository.findByUrlIn(urls);
+
+        Map<String, Long> browserBreakdown = clicks.stream()
+            .map(click -> extractBrowser(click.getUserAgent()))
+            .collect(Collectors.groupingBy(b -> b, Collectors.counting()));
+
+        Map<String, Long> osBreakdown = clicks.stream()
+            .map(click -> extractOperatingSystem(click.getUserAgent()))
+            .collect(Collectors.groupingBy(os -> os, Collectors.counting()));
+
+        Map<String, Long> clicksByDate = clicks.stream()
+            .collect(Collectors.groupingBy(
+                click -> click.getClickedAt().toLocalDate().toString(),
+                Collectors.counting()
+            ));
+
+        Map<String, Long> referrerBreakdown = clicks.stream()
+            .map(click -> extractReferrerDomain(click.getReferrer()))
+            .collect(Collectors.groupingBy(ref -> ref, Collectors.counting()));
+
+        Map<String, Long> deviceBreakdown = clicks.stream()
+            .map(click -> extractDeviceType(click.getUserAgent()))
+            .collect(Collectors.groupingBy(dev -> dev, Collectors.counting()));
+
+        Map<String, Long> countryBreakdown = clicks.stream()
+            .map(click -> click.getCountry() != null ? click.getCountry() : "Unknown")
+            .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
+        Map<String, Long> regionBreakdown = clicks.stream()
+            .map(click -> {
+                String region = click.getRegion() != null ? click.getRegion() : "Unknown";
+                String country = click.getCountry() != null ? click.getCountry() : "Unknown";
+                return region + ":" + country;
+            })
+            .collect(Collectors.groupingBy(r -> r, Collectors.counting()));
+
+        Map<String, Long> cityBreakdown = clicks.stream()
+            .map(click -> {
+                String city = click.getCity() != null ? click.getCity() : "Unknown";
+                String country = click.getCountry() != null ? click.getCountry() : "Unknown";
+                return city + ":" + country;
+            })
+            .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
+        List<ClickDetailDTO> lastClicks = clicks.stream()
+            .sorted(Comparator.comparing(Click::getClickedAt).reversed())
+            .limit(20)
+            .map(click -> ClickDetailDTO.builder()
+                .clickedAt(click.getClickedAt())
+                .ipAddress(click.getIpAddress())
+                .userAgent(click.getUserAgent())
+                .referrer(click.getReferrer())
+                .country(click.getCountry())
+                .region(click.getRegion())
+                .city(click.getCity())
+                .utmSource(click.getUtmSource())
+                .utmMedium(click.getUtmMedium())
+                .utmCampaign(click.getUtmCampaign())
+                .build())
+            .toList();
+
+        int[][] trafficHeatmap = new int[7][24];
+        for (Click click : clicks) {
+            int day = click.getClickedAt().getDayOfWeek().getValue();
+            int dayIndex = (day == 7) ? 0 : day;
+            int hour = click.getClickedAt().getHour();
+            trafficHeatmap[dayIndex][hour]++;
+        }
+
+        Map<String, Long> referrerCategories = clicks.stream()
+            .map(click -> categorizeReferrer(extractReferrerDomain(click.getReferrer())))
+            .collect(Collectors.groupingBy(cat -> cat, Collectors.counting()));
+
+        Map<String, Long> utmSources = clicks.stream()
+            .map(click -> click.getUtmSource() != null ? click.getUtmSource() : "None")
+            .filter(s -> !s.equalsIgnoreCase("None"))
+            .collect(Collectors.groupingBy(s -> s, Collectors.counting()));
+
+        Map<String, Long> utmCampaigns = clicks.stream()
+            .map(click -> click.getUtmCampaign() != null ? click.getUtmCampaign() : "None")
+            .filter(c -> !c.equalsIgnoreCase("None"))
+            .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime sevenDaysAgo = now.minusDays(7);
+        LocalDateTime fourteenDaysAgo = now.minusDays(14);
+
+        long currentPeriodCount = clicks.stream().filter(c -> c.getClickedAt().isAfter(sevenDaysAgo)).count();
+        long previousPeriodCount = clicks.stream().filter(c -> c.getClickedAt().isAfter(fourteenDaysAgo) && c.getClickedAt().isBefore(sevenDaysAgo)).count();
+
+        Double clickGrowthPercent;
+        if (previousPeriodCount == 0) {
+            clickGrowthPercent = currentPeriodCount > 0 ? 100.0 : 0.0;
+        } else {
+            double diff = (double) (currentPeriodCount - previousPeriodCount);
+            clickGrowthPercent = Math.round((diff / previousPeriodCount * 100.0) * 10.0) / 10.0;
+        }
+
+        String peakTime = calculatePeakTime(trafficHeatmap);
+        long daysSpan = Math.max(1, clicksByDate.size());
+        Double avgDailyClicks = Math.round(((double) clicks.size() / daysSpan) * 10.0) / 10.0;
+
+        return UrlAnalyticsResponse.builder()
+            .shortCode("portfolio")
+            .originalUrl("Account Portfolio Overview")
+            .totalClicks(clicks.size())
+            .lastClicks(lastClicks)
+            .browserBreakdown(browserBreakdown)
+            .osBreakdown(osBreakdown)
+            .clicksByDate(clicksByDate)
+            .referrerBreakdown(referrerBreakdown)
+            .deviceBreakdown(deviceBreakdown)
+            .countryBreakdown(countryBreakdown)
+            .regionBreakdown(regionBreakdown)
+            .cityBreakdown(cityBreakdown)
+            .trafficHeatmap(trafficHeatmap)
+            .clickGrowthPercent(clickGrowthPercent)
+            .peakTime(peakTime)
+            .avgDailyClicks(avgDailyClicks)
+            .referrerCategories(referrerCategories)
+            .utmSources(utmSources)
+            .utmCampaigns(utmCampaigns)
+            .build();
+    }
+
+    private String categorizeReferrer(String domain) {
+        if (domain == null || domain.equals("Direct / Unknown") || domain.trim().isEmpty()) {
+            return "Direct";
+        }
+        String d = domain.toLowerCase();
+        if (d.contains("twitter") || d.contains("t.co") || d.contains("x.com") || d.contains("linkedin") ||
+            d.contains("instagram") || d.contains("facebook") || d.contains("fb.com") || d.contains("reddit") ||
+            d.contains("youtube") || d.contains("tiktok") || d.contains("pinterest")) {
+            return "Social";
+        }
+        if (d.contains("google") || d.contains("bing") || d.contains("duckduckgo") || d.contains("yahoo") ||
+            d.contains("baidu") || d.contains("yandex")) {
+            return "Search";
+        }
+        if (d.contains("mail") || d.contains("gmail") || d.contains("outlook")) {
+            return "Email";
+        }
+        return "Other";
+    }
+
+    private String calculatePeakTime(int[][] heatmap) {
+        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        int maxVal = 0;
+        int maxDay = 0;
+        int maxHour = 0;
+        for (int d = 0; d < 7; d++) {
+            for (int h = 0; h < 24; h++) {
+                if (heatmap[d][h] > maxVal) {
+                    maxVal = heatmap[d][h];
+                    maxDay = d;
+                    maxHour = h;
+                }
+            }
+        }
+        if (maxVal == 0) return "No traffic yet";
+        String ampm = maxHour >= 12 ? "PM" : "AM";
+        int displayHour = maxHour % 12;
+        if (displayHour == 0) displayHour = 12;
+        return days[maxDay] + "s at " + displayHour + ":00 " + ampm;
     }
 
     // Parses the referrer string to extract domain.

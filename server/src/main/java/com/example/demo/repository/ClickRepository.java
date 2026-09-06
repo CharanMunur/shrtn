@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ClickRepository extends JpaRepository<Click, Long> {
     List<Click> findByUrl(Url url);
+    List<Click> findByUrlIn(List<Url> urls);
     long countByUrl(Url url);
     long countByUrlId(Long urlId);
     @Modifying

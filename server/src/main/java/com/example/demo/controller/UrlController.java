@@ -234,6 +234,11 @@ public class UrlController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @GetMapping("/urls/analytics/portfolio")
+    public ResponseEntity<UrlAnalyticsResponse> getPortfolioAnalytics() {
+        return ResponseEntity.ok(urlService.getPortfolioAnalytics());
+    }
+
     @GetMapping("/urls/{shortCode}/analytics")
     public ResponseEntity<UrlAnalyticsResponse> getUrlAnalytics(@PathVariable String shortCode) {
         return ResponseEntity.ok(urlService.getUrlAnalytics(shortCode));

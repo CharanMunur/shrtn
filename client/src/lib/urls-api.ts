@@ -44,6 +44,12 @@ export async function getUrlAnalytics(
   shortCode: string,
   token: string
 ): Promise<UrlAnalyticsResponse> {
+  if (shortCode === "portfolio" || shortCode === "all") {
+    return requestJson<UrlAnalyticsResponse>("/urls/analytics/portfolio", {
+      method: "GET",
+      token,
+    })
+  }
   return requestJson<UrlAnalyticsResponse>(`/urls/${shortCode}/analytics`, {
     method: "GET",
     token,

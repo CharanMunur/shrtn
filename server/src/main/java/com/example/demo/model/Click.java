@@ -54,4 +54,13 @@ public class Click {
 
     @Column(length = 100)
     private String city;
+
+    @Column(length = 100)
+    private String utmSource;
+
+    @Column(length = 100)
+    private String utmMedium;
+
+    @Column(length = 100)
+    private String utmCampaign;
 }

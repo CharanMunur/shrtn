@@ -28,4 +28,10 @@ public class UrlAnalyticsResponse {
     private Map<String, Long> regionBreakdown;
     private Map<String, Long> cityBreakdown;
     private int[][] trafficHeatmap;
+    private Double clickGrowthPercent;
+    private String peakTime;
+    private Double avgDailyClicks;
+    private Map<String, Long> referrerCategories;
+    private Map<String, Long> utmSources;
+    private Map<String, Long> utmCampaigns;
 }

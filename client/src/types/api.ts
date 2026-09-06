@@ -72,6 +72,13 @@ export type ClickDetailDTO = {
   clickedAt: string
   ipAddress: string
   userAgent: string
+  referrer?: string
+  country?: string
+  region?: string
+  city?: string
+  utmSource?: string
+  utmMedium?: string
+  utmCampaign?: string
 }
 
 export type UrlAnalyticsResponse = {
@@ -88,4 +95,10 @@ export type UrlAnalyticsResponse = {
   regionBreakdown: Record<string, number>
   cityBreakdown: Record<string, number>
   trafficHeatmap: number[][]
+  clickGrowthPercent?: number
+  peakTime?: string
+  avgDailyClicks?: number
+  referrerCategories?: Record<string, number>
+  utmSources?: Record<string, number>
+  utmCampaigns?: Record<string, number>
 }

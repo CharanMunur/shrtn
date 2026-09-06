@@ -12,7 +12,6 @@ import {
   Globe2,
   Monitor,
   Clock,
-  Link2,
   BarChart3,
   Smartphone,
   Bot,
@@ -22,7 +21,12 @@ import {
   Copy,
   ExternalLink,
   Check,
+  Download,
+  TrendingUp,
+  TrendingDown,
+  Compass,
 } from "lucide-react"
+
 import {
   Select,
   SelectContent,
@@ -56,9 +60,9 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "all">("7d")
-  const [tabGroup2, setTabGroup2] = useState<"browsers" | "os" | "devices">("browsers")
+  const [tabGroup2, setTabGroup2] = useState<"browsers" | "os" | "devices" | "sources">("browsers")
   const [tabGroup3, setTabGroup3] = useState<"countries" | "regions" | "cities">("countries")
-  const [expandedTab, setExpandedTab] = useState<"browsers" | "os" | "devices" | "countries" | "regions" | "cities" | null>(null)
+  const [expandedTab, setExpandedTab] = useState<"browsers" | "os" | "devices" | "sources" | "countries" | "regions" | "cities" | null>(null)
   const [copied, setCopied] = useState(false)
 
   const handleCopyShortUrl = () => {
@@ -67,6 +71,31 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
     navigator.clipboard.writeText(fullUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleExportCSV = () => {
+    if (!analytics) return
+    const headers = ["Timestamp", "IP Address", "Country", "Region", "City", "User Agent", "Referrer", "UTM Source", "UTM Medium", "UTM Campaign"]
+    const rows = (analytics.lastClicks || []).map(click => [
+      click.clickedAt,
+      click.ipAddress || "",
+      click.country || "",
+      click.region || "",
+      click.city || "",
+      `"${(click.userAgent || "").replace(/"/g, '""')}"`,
+      `"${(click.referrer || "").replace(/"/g, '""')}"`,
+      click.utmSource || "",
+      click.utmMedium || "",
+      click.utmCampaign || ""
+    ])
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `analytics_${analytics.shortCode}_${new Date().toISOString().split("T")[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const chartData = useMemo(() => {
@@ -127,28 +156,16 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
       setIsLoading(true)
       setError("")
       try {
-        const initialCode = shortCode ?? initialShortCode
-        if (initialCode) {
-          const [data, analyticsData] = await Promise.all([
-            getUserUrls(token!),
-            getUrlAnalytics(initialCode, token!),
-          ])
-          const enriched = enrichUrls(data)
-          setUrls(enriched)
-          setSelectedCode(initialCode)
-          setAnalytics(analyticsData)
-        } else {
-          const data = await getUserUrls(token!)
-          const enriched = enrichUrls(data)
-          setUrls(enriched)
+        const initialCode = shortCode ?? initialShortCode ?? ""
+        const data = await getUserUrls(token!)
+        const enriched = enrichUrls(data)
+        setUrls(enriched)
 
-          const nextCode = enriched.length > 0 ? enriched[0].shortCode : ""
-          if (nextCode) {
-            setSelectedCode(nextCode)
-            navigate(`/dashboard/analytics/${nextCode}`, { replace: true })
-            const analyticsData = await getUrlAnalytics(nextCode, token!)
-            setAnalytics(analyticsData)
-          }
+        const activeCode = initialCode || (enriched.length > 0 ? enriched[0].shortCode : "")
+        if (activeCode) {
+          setSelectedCode(activeCode)
+          const analyticsData = await getUrlAnalytics(activeCode, token!)
+          setAnalytics(analyticsData)
         }
       } catch (err) {
         if (err instanceof ApiError) setError(err.message)
@@ -171,9 +188,8 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
   const countryEntries = analytics ? topEntries(analytics.countryBreakdown) : []
   const regionEntries = analytics ? topEntries(analytics.regionBreakdown) : []
   const cityEntries = analytics ? topEntries(analytics.cityBreakdown) : []
+  const referrerCategoryEntries = analytics ? topEntries(analytics.referrerCategories ?? {}) : []
   const total = analytics?.totalClicks ?? 0
-
-
 
   return (
     <div className="space-y-6 py-8 w-full">
@@ -211,9 +227,9 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                       if (val) navigate(`/dashboard/analytics/${val}`)
                     }}
                   >
-                    <SelectTrigger className="h-10 px-3.5 bg-muted/20 border-border/60 rounded-sm text-base font-mono font-bold text-primary hover:bg-muted/50 transition-colors">
+                    <SelectTrigger className="h-10 px-3 bg-muted/20 border border-border/60 rounded-sm font-mono text-base font-bold text-primary hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2">
-                        <Link2 className="h-4.5 w-4.5 text-primary shrink-0" />
+                        <BarChart3 className="h-4.5 w-4.5 text-primary shrink-0" />
                         <span>/{analytics.shortCode}</span>
                       </div>
                     </SelectTrigger>
@@ -227,13 +243,13 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   </Select>
                 ) : (
                   <div className="flex items-center gap-2 font-mono text-base font-bold text-primary">
-                    <Link2 className="h-4.5 w-4.5 text-primary shrink-0" />
+                    <BarChart3 className="h-4.5 w-4.5 text-primary shrink-0" />
                     <span>/{analytics.shortCode}</span>
                   </div>
                 )}
               </div>
 
-              {analytics.originalUrl && (
+              {selectedCode !== "portfolio" && analytics.originalUrl && (
                 <p className="text-sm text-muted-foreground font-mono truncate">
                   <a
                     href={analytics.originalUrl}
@@ -243,6 +259,11 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   >
                     {analytics.originalUrl}
                   </a>
+                </p>
+              )}
+              {selectedCode === "portfolio" && (
+                <p className="text-xs text-muted-foreground font-medium">
+                  Aggregated insights across {urls.length} active short links.
                 </p>
               )}
             </div>
@@ -256,6 +277,14 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
                 <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-sm border border-border/60 bg-muted/20 hover:bg-muted text-foreground transition-colors cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5 text-primary" />
+                <span>Export CSV</span>
               </button>
               {analytics.originalUrl && (
                 <a
@@ -276,46 +305,51 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
             const topCountry = countryEntries[0]
             const topCountryPct = topCountry && total ? Math.round((topCountry[1] / total) * 100) : 0
 
-            const topBrowser = browserEntries[0]
-            const topBrowserPct = topBrowser && total ? Math.round((topBrowser[1] / total) * 100) : 0
-
-            const topOs = osEntries[0]
-            const topOsPct = topOs && total ? Math.round((topOs[1] / total) * 100) : 0
-
-            const lastClickObj = analytics.lastClicks && analytics.lastClicks.length > 0 ? analytics.lastClicks[0] : null
-            const lastClickRel = lastClickObj?.clickedAt ? formatRelativeTime(lastClickObj.clickedAt) : null
+            const growth = analytics.clickGrowthPercent ?? 0
+            const isPositive = growth >= 0
 
             return (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <MetricCard
-                  icon={<MousePointerClick className="h-4 w-4" />}
+                  icon={<MousePointerClick className="h-4 w-4 text-primary" />}
                   label="Total Clicks"
                   value={total.toLocaleString()}
-                  subText="All clicks registered"
+                  subText={
+                    <span className="inline-flex items-center gap-1 font-semibold">
+                      {isPositive ? (
+                        <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={isPositive ? "text-green-500" : "text-red-500"}>
+                        {isPositive ? `+${growth}%` : `${growth}%`} vs prior 7d
+                      </span>
+                    </span>
+                  }
                 />
                 <MetricCard
-                  icon={<Globe2 className="h-4 w-4" />}
-                  label="Browsers"
-                  value={browserEntries.length.toString()}
-                  subText={topBrowser ? `Top: ${topBrowser[0]} (${topBrowserPct}%)` : "No browser data"}
+                  icon={<Clock className="h-4 w-4 text-primary" />}
+                  label="Peak Activity"
+                  value={analytics.peakTime || "No traffic"}
+                  subText="Highest engagement window"
                 />
                 <MetricCard
-                  icon={<Monitor className="h-4 w-4" />}
-                  label="OS Types"
-                  value={osEntries.length.toString()}
-                  subText={topOs ? `Top: ${topOs[0]} (${topOsPct}%)` : "No OS data"}
+                  icon={<BarChart3 className="h-4 w-4 text-primary" />}
+                  label="Daily Average"
+                  value={`${analytics.avgDailyClicks ?? 0}`}
+                  subText="Avg clicks per active day"
                 />
                 <MetricCard
-                  icon={<MapPin className="h-4 w-4" />}
-                  label="Countries"
-                  value={countryEntries.length.toString()}
-                  subText={topCountry ? `Top: ${topCountry[0]} (${topCountryPct}%)` : "No location data"}
+                  icon={<MapPin className="h-4 w-4 text-primary" />}
+                  label="Top Location"
+                  value={topCountry ? topCountry[0] : "None"}
+                  subText={topCountry ? `${topCountry[1].toLocaleString()} clicks (${topCountryPct}%)` : "No location data"}
                 />
                 <MetricCard
-                  icon={<Clock className="h-4 w-4" />}
-                  label="Recent Clicks"
-                  value={(analytics.lastClicks?.length ?? 0).toString()}
-                  subText={lastClickRel ? `Latest: ${lastClickRel}` : "No recent activity"}
+                  icon={<Compass className="h-4 w-4 text-primary" />}
+                  label="Traffic Sources"
+                  value={Object.keys(analytics.referrerCategories || {}).length.toString()}
+                  subText={Object.keys(analytics.referrerBreakdown || {}).length + " unique referrers"}
                 />
               </div>
             )
@@ -411,9 +445,9 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
 
               {/* Tabs Row under Header */}
               <div className="flex border-b border-border bg-card px-5 pt-3 pb-3 gap-6 shrink-0">
-                {(["browsers", "os", "devices"] as const).map((tab) => {
+                {(["browsers", "os", "devices", "sources"] as const).map((tab) => {
                   const active = tabGroup2 === tab
-                  const label = tab === "browsers" ? "Browsers" : tab === "os" ? "OS" : "Devices"
+                  const label = tab === "browsers" ? "Browsers" : tab === "os" ? "OS" : tab === "devices" ? "Devices" : "Sources"
                   return (
                     <button
                       key={tab}
@@ -462,6 +496,14 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                       else if (k.includes("bot")) return <Bot className="h-4 w-4 text-muted-foreground" />
                       return <img src={src} className="h-4 w-4 object-contain opacity-70 dark:invert" alt={name} />
                     }}
+                  />
+                )}
+                {tabGroup2 === "sources" && (
+                  <BreakdownTable
+                    title="Traffic Source"
+                    entries={referrerCategoryEntries.slice(0, 5)}
+                    total={total}
+                    renderIcon={() => <Compass className="h-4 w-4 text-primary" />}
                   />
                 )}
               </div>
@@ -579,11 +621,16 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
           {/* Recent Clicks Card (Full Width) */}
           <div className="rounded-sm border border-border/60 bg-card overflow-hidden flex flex-col">
             {/* Normal Casing Header */}
-            <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60">
-              <h3 className="text-base font-bold text-foreground leading-none">Recent Clicks</h3>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Last {analytics.lastClicks ? Math.min(analytics.lastClicks.length, 5) : 0} of {total.toLocaleString()} clicks registered.
-              </p>
+            <div className="px-5 pt-5 pb-3 shrink-0 border-b border-border/60 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-foreground leading-none">Live Click Log</h3>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Real-time click activity stream across global edge locations.
+                </p>
+              </div>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-primary/10 text-primary border border-primary/20">
+                {analytics.lastClicks ? analytics.lastClicks.length : 0} Recent Entries
+              </span>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-border/60 min-h-0">
               {!analytics.lastClicks || analytics.lastClicks.length === 0 ? (
@@ -592,7 +639,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   <p className="text-sm">No recent clicks</p>
                 </div>
               ) : (
-                analytics.lastClicks.slice(0, 5).map((click, i) => {
+                analytics.lastClicks.slice(0, 10).map((click, i) => {
                   const avatar = new Avatar(dicebearStyle, {
                     "backgroundColor": [],
                     "beardProbability": 0,
@@ -606,6 +653,7 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   const browserInfo = getBrowserIcon(click.userAgent);
                   const osInfo = getOsIcon(click.userAgent);
                   const deviceLabel = getDeviceType(click.userAgent);
+                  const countryCode = click.country ? getCountryCode(click.country) : null;
 
                   const relTime = click.clickedAt ? formatRelativeTime(click.clickedAt) : "—";
                   const absTime = click.clickedAt ? formatDateTime(click.clickedAt) : "—";
@@ -621,9 +669,19 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                         
                         {/* Session Metadata */}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-foreground tracking-tight">
-                            {click.ipAddress ? `Visitor (${click.ipAddress})` : "Anonymous Visitor"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground tracking-tight">
+                              {click.ipAddress ? `Visitor (${click.ipAddress})` : "Anonymous Visitor"}
+                            </p>
+                            {countryCode && (
+                              <span className={`fi fi-${countryCode} shadow-sm scale-100 rounded-xs`} title={click.country} />
+                            )}
+                            {click.country && !countryCode && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40 font-semibold">
+                                {click.country}
+                              </span>
+                            )}
+                          </div>
                           
                           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[11px] font-medium text-muted-foreground">
                             {/* Browser */}
@@ -658,6 +716,24 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40 font-semibold uppercase tracking-wider shrink-0">
                               {deviceLabel}
                             </span>
+
+                            {click.referrer && click.referrer !== "Direct / Unknown" && (
+                              <>
+                                <span className="text-muted-foreground/30 text-xs">•</span>
+                                <span className="text-primary font-mono text-[11px] truncate max-w-[150px]">
+                                  via {click.referrer}
+                                </span>
+                              </>
+                            )}
+
+                            {click.utmCampaign && (
+                              <>
+                                <span className="text-muted-foreground/30 text-xs">•</span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-semibold border border-purple-500/20">
+                                  utm:{click.utmCampaign}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -702,6 +778,11 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                     <Smartphone className="h-5 w-5 text-primary" />
                     Devices
                   </>
+                ) : expandedTab === "sources" ? (
+                  <>
+                    <Compass className="h-5 w-5 text-primary" />
+                    Traffic Sources
+                  </>
                 ) : expandedTab === "countries" ? (
                   <>
                     <MapPin className="h-5 w-5 text-primary" />
@@ -743,6 +824,14 @@ export function AnalyticsPage({ initialShortCode }: AnalyticsPageProps) {
                   entries={analytics ? topEntries(analytics.osBreakdown, 100) : []}
                   total={total}
                   getIcon={getOsIcon}
+                />
+              )}
+              {expandedTab === "sources" && (
+                <BreakdownTable
+                  title="Traffic Source"
+                  entries={referrerCategoryEntries}
+                  total={total}
+                  renderIcon={() => <Compass className="h-4 w-4 text-primary" />}
                 />
               )}
               {expandedTab === "devices" && (
@@ -814,8 +903,11 @@ function MetricCard({
   value: string
   subText?: React.ReactNode
 }) {
+  const isLongText = value.length > 12
+  const textSizeClass = isLongText ? "text-sm font-bold tracking-tight text-foreground truncate" : "text-2xl font-semibold tabular-nums tracking-tight text-foreground"
+
   return (
-    <div className="rounded-sm border border-border/60 bg-card p-4 flex flex-col justify-between gap-3 hover:border-border transition-colors">
+    <div className="rounded-sm border border-border/60 bg-card p-4 flex flex-col justify-between gap-3 hover:border-border transition-colors min-w-0">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <div className="p-1 rounded-sm bg-muted text-muted-foreground">
           {icon}
@@ -823,8 +915,8 @@ function MetricCard({
         <span>{label}</span>
       </div>
 
-      <div className="space-y-1">
-        <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+      <div className="space-y-1 min-w-0">
+        <p className={textSizeClass} title={value}>
           {value}
         </p>
         {subText && (
