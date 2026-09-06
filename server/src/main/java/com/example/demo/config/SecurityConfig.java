@@ -30,7 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4173}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4173,http://localhost:8080,https://shrtn.fun,https://app.shrtn.fun}")
     private List<String> allowedOrigins;
 
     private final JwtAuthenticationFilter jwtAuthFilter;

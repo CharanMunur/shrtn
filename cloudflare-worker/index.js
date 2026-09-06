@@ -49,7 +49,7 @@ export default {
       return fetch(new Request(renderOriginUrl + "/health", request));
     }
 
-    // Edge Cache static assets & strip invalid content-disposition header to prevent browser script blocking
+    // Edge Cache static assets & strip Origin/Content-Disposition headers to bypass CORS & script blocking
     if (urlObj.pathname.startsWith("/assets/")) {
       const cache = caches.default;
       let cachedResponse = await cache.match(request);
@@ -58,7 +58,13 @@ export default {
       }
 
       try {
-        const originReq = new Request(renderOriginUrl + urlObj.pathname + urlObj.search, request);
+        const reqHeaders = new Headers(request.headers);
+        reqHeaders.delete("Origin");
+        reqHeaders.delete("origin");
+        const originReq = new Request(renderOriginUrl + urlObj.pathname + urlObj.search, {
+          method: "GET",
+          headers: reqHeaders
+        });
         const originResp = await fetch(originReq);
         if (originResp.ok) {
           const headers = new Headers(originResp.headers);
