@@ -155,7 +155,11 @@ public class UrlService {
             savedUrl = urlRepository.save(saved);
         }
 
+        // Invalidate the user's URL list cache
         redisTemplate.delete(userUrlsCacheKey(user.getId()));
+
+        // Eagerly warm the redirect cache so the very first click hits Redis, not the DB.
+        cacheUrl("url:" + savedUrl.getShortCode(), savedUrl);
 
         boolean isProtected = passwordHash != null;
         return new UrlResponse(shortCode, originalUrl, 0, true, false, isProtected, expiresAt, savedUrl.getCreatedAt(), iosUrl, androidUrl, maxClicks);
